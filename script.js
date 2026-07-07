@@ -22,6 +22,8 @@ let slideFiles = [];
 let currentSlide = 0;
 let slideInterval = null;
 let slideIsPlaying = true;
+let aiEngine = null;
+const selectedModel = "Llama-3-8B-Instruct-q4f16_1-MLC";
 
 let pan = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 let zoom = 0.85;
@@ -1243,7 +1245,6 @@ function openEditModal(url, title) {
   document.getElementById("edit-modal").style.display = "flex";
 }
 
-// Fixed minor brace closure boundaries
 function closeEditModal() {
   document.getElementById("edit-frame").src = "";
   document.getElementById("edit-modal").style.display = "none";
@@ -1331,7 +1332,6 @@ function handleGeminiEnter(e) {
   if (e.key === "Enter") askGemini();
 }
 
-// Patched to use plain text parsing rules to satisfy Chrome Private Network check loops
 async function askGemini() {
   const input = document.getElementById("gemini-input");
   const chat = document.getElementById("gemini-chat");
@@ -1353,7 +1353,7 @@ async function askGemini() {
             <div style="display:flex; align-items:center; gap:8px;">
                 <div class="google-spinner" style="width:16px; height:16px;">
                     <svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg>
-                </div>Reading context...
+                </div><span id="ai-status-text">Initializing in-browser AI engine...</span>
             </div>
         </div>`,
   );
@@ -1361,7 +1361,7 @@ async function askGemini() {
 
   try {
     let workspaceContext =
-      "You are the Orbit Spatial Assistant. Below is the text extracted from the user's currently open documents in their workspace. Use this context to answer their query accurately and concisely.\n\n";
+      "You are the Orbit Spatial Assistant. Use this context to answer the user query accurately.\n\n";
     const nodes = document.querySelectorAll(".orbit-node");
 
     if (nodes.length > 0) {
@@ -1381,37 +1381,47 @@ async function askGemini() {
               fileId: fileId,
               mimeType: type === "sheet" ? "text/csv" : "text/plain",
             });
-            workspaceContext += `--- Document: ${title} ---\n${response.body.substring(0, 1000)}\n\n`;
+            workspaceContext += `--- Document: ${title} ---\n${response.body.substring(0, 500)}\n\n`;
           } catch (err) {
-            workspaceContext += `--- Document: ${title} ---\n[Cloud Content Protected]\n\n`;
+            workspaceContext += `--- Document: ${title} ---\n[Content Protected]\n\n`;
           }
-        } else if (node.getAttribute("data-is-blank") === "true") {
-          workspaceContext += `--- Document: ${title} ---\n[This is a local empty workspace asset module folder labeled: ${title}]\n\n`;
         }
       }
     }
 
-    const ollamaResponse = await fetch(`http://127.0.0.1:11434/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify({
-        model: "llama3",
-        prompt: `${workspaceContext}\n\nUser Question: ${query}`,
-        stream: false,
-      }),
-    });
+    if (!aiEngine) {
+      const statusLabel = document.getElementById("ai-status-text");
+      statusLabel.innerText = "Downloading AI architecture dependencies...";
 
-    if (!ollamaResponse.ok) throw new Error(`Status: ${ollamaResponse.status}`);
+      const webllm = await import("https://esm.run/@mlc-ai/web-llm");
 
-    const data = await ollamaResponse.json();
-    document.getElementById(loadingId).innerHTML = data.response
+      aiEngine = await webllm.CreateMLCEngine(selectedModel, {
+        initProgressCallback: (report) => {
+          statusLabel.innerText = `Caching weights: ${Math.round(report.progress * 100)}%`;
+        },
+      });
+    }
+
+    document.getElementById("ai-status-text").innerText = "Thinking...";
+
+    const messages = [
+      { role: "system", content: workspaceContext },
+      { role: "user", content: query },
+    ];
+
+    const reply = await aiEngine.chat.completions.create({ messages });
+    const aiResponse = reply.choices[0].message.content;
+
+    document.getElementById(loadingId).innerHTML = aiResponse
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\n/g, "<br>");
   } catch (error) {
-    document.getElementById(loadingId).innerHTML =
-      `<div style="color:var(--google-red); line-height: 1.6;"><b>Inference Connection Halted</b><br>1. Open your desktop terminal console.<br>2. Execute: <code>ollama run llama3</code></div>`;
+    console.error(error);
+    document.getElementById(loadingId).innerHTML = `
+            <div style="color:var(--google-red); line-height: 1.6;">
+                <b>In-Browser AI Initialization Failed</b><br>
+                Ensure your browser supports WebGPU (Chrome/Edge 113+) or check your console logs.
+            </div>`;
   }
   chat.scrollTop = chat.scrollHeight;
 }
