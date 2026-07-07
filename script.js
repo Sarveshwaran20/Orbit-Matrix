@@ -1389,9 +1389,13 @@ async function askGemini() {
       }
     }
 
-    const ollamaResponse = await fetch(`http://localhost:11434/api/generate`, {
+    const ollamaResponse = await fetch(`http://127.0.0.1:11434/api/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify({
         model: "llama3",
         prompt: `${workspaceContext}\n\nUser Question: ${query}`,
