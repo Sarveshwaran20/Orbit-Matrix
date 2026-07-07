@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Google Orbit MVP</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+  </head>
+  <body>
+    <div id="global-loader">
+      <div class="google-spinner">
+        <svg viewBox="25 25 50 50">
+          <circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle>
+        </svg>
+      </div>
+      <div
+        style="margin-top: 16px; font-weight: 500; color: var(--text-secondary)"
+      >
+        Syncing with Orbit Cloud...
+      </div>
+    </div>
+
+    <div
+      id="key-setup-backdrop"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 20000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: var(--surface);
+          padding: 32px;
+          border-radius: 16px;
+          width: 420px;
+          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+          border: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        "
+      >
+        <h2
+          style="
+            margin: 0;
+            font-weight: 500;
+            font-size: 22px;
+            color: var(--text-primary);
+          "
+        >
+          Initialize Orbit Matrix
+        </h2>
+        <p
+          style="
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+          "
+        >
+          To activate cloud connections, please enter your Google Cloud API Key.
+          This key is stored securely in your private browser storage and is
+          never sent to GitHub.
+        </p>
+        <input
+          type="password"
+          id="modal-key-input"
+          class="global-input"
+          placeholder="AIzaSy..."
+          style="width: 100%; box-sizing: border-box"
+        />
+        <button
+          onclick="saveDeveloperKeyFromModal()"
+          class="primary-btn"
+          style="width: 100%; padding: 10px"
+        >
+          Save & Initialize Workspace
+        </button>
+      </div>
+    </div>
+
+    <div id="focus-backdrop" onclick="closeAllFocus()"></div>
+    <div id="share-backdrop" onclick="closeShareModal()"></div>
+    <div id="palette-backdrop" onclick="closeCommandPalette()"></div>
+    <div id="tutorial-overlay" style="display: none"></div>
+    <div id="toast-notification">Notification</div>
+
+    <div id="command-palette">
+      <div class="palette-search">
+        <span>🔍</span>
+        <input
+          type="text"
+          id="palette-input"
+          placeholder="Type a command..."
+          onkeyup="filterPalette()"
+        />
+        <span
+          style="
+            font-size: 11px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+          "
+          >ESC</span
+        >
+      </div>
+      <div class="palette-results" id="palette-results">
+        <div class="palette-item" onclick="openFilePicker('doc')">
+          <span>📄</span> Create New Document
+        </div>
+        <div class="palette-item" onclick="openFilePicker('sheet')">
+          <span>📊</span> Create New Spreadsheet
+        </div>
+        <div class="palette-item" onclick="openFilePicker('slide')">
+          <span>🖼️</span> Create New Presentation
+        </div>
+        <div class="palette-item" onclick="toggleGemini()">
+          <span>✨</span> Ask Orbit AI Assistant
+        </div>
+        <div class="palette-item" onclick="recenterCanvas()">
+          <span>🎯</span> Recenter Canvas Map
+        </div>
+        <div class="palette-item" onclick="goToHome()">
+          <span>🏠</span> Go to Dashboard Home
+        </div>
+      </div>
+    </div>
+
+    <div id="tutorial-box" style="display: none">
+      <div class="tutorial-header">
+        <span id="tutorial-step-title">Welcome</span>
+        <button class="tutorial-close" onclick="skipTutorial()">✕</button>
+      </div>
+      <div id="tutorial-step-text" class="tutorial-body"></div>
+      <div class="tutorial-footer">
+        <button
+          class="secondary-btn"
+          style="padding: 4px 12px; font-size: 12px"
+          onclick="skipTutorial()"
+        >
+          Skip
+        </button>
+        <button
+          id="tutorial-next-btn"
+          class="primary-btn"
+          style="padding: 4px 16px; font-size: 12px"
+          onclick="nextTutorialStep()"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+
+    <div id="orbit-header">
+      <div class="header-left">
+        <div
+          class="logo-area"
+          id="tut-logo"
+          title="Orbit Home"
+          onclick="goToHome()"
+        >
+          <img src="logo.png" alt="Orbit Logo" class="brand-logo-img" />
+        </div>
+        <div
+          id="home-meta-area"
+          style="
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-left: 8px;
+          "
+        >
+          Orbit Home
+        </div>
+
+        <div class="doc-meta-area" id="doc-meta-area" style="display: none">
+          <div class="doc-title-row">
+            <input
+              type="text"
+              class="doc-title-input"
+              id="workspace-title"
+              value="Untitled Workspace Matrix"
+              onchange="
+                saveCurrentWorkspace();
+                triggerToast('Workspace renamed');
+              "
+            />
+            <span
+              class="doc-icons"
+              title="Star"
+              onclick="
+                this.style.color = '#fbbc05';
+                triggerToast('Workspace starred');
+              "
+              >☆</span
+            >
+            <span
+              class="doc-icons"
+              style="font-size: 16px"
+              title="Document status"
+              onclick="triggerToast('Saved locally')"
+              >☁️</span
+            >
+          </div>
+          <div class="google-menu-bar" id="main-menu-bar">
+            <div class="menu-item" data-menu="menu-file">
+              File
+              <div class="dropdown-menu" id="menu-file">
+                <div class="dropdown-item" onclick="createNewWorkspace()">
+                  <span>🌌 New Workspace</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="openFilePicker('doc')">
+                  <span>📂 Import File</span>
+                </div>
+                <div class="dropdown-item" onclick="openShareModal()">
+                  <span>👤 Share Magic Link</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="goToHome()">
+                  <span>🏠 Back to Home</span>
+                </div>
+              </div>
+            </div>
+            <div class="menu-item" data-menu="menu-edit">
+              Edit
+              <div class="dropdown-menu" id="menu-edit">
+                <div class="dropdown-item" onclick="triggerUndo()">
+                  <span>↩️ Undo Move</span>
+                </div>
+                <div class="dropdown-item" onclick="triggerRedo()">
+                  <span>↪️ Redo Move</span>
+                </div>
+              </div>
+            </div>
+            <div class="menu-item" data-menu="menu-view">
+              View
+              <div class="dropdown-menu" id="menu-view">
+                <div class="dropdown-item" onclick="recenterCanvas()">
+                  <span>🎯 Recenter Canvas</span>
+                </div>
+                <div class="dropdown-item" onclick="toggleGemini()">
+                  <span>✨ Open Orbit AI</span>
+                </div>
+                <div class="dropdown-item" onclick="openCommandPalette()">
+                  <span>🔍 Command Palette</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="toggleFullscreen()">
+                  <span>⛶ Full screen</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div
+          class="header-status"
+          id="linking-status"
+          style="display: none; color: var(--google-blue); font-weight: 500"
+        >
+          Select a document...
+        </div>
+        <button class="share-btn" onclick="openShareModal()">🔒 Share</button>
+        <button class="gemini-trigger" id="tut-gemini" onclick="toggleGemini()">
+          ✨ Orbit AI
+        </button>
+        <button id="google-signin-btn" class="auth-btn">Sign in</button>
+        <button
+          id="google-signout-btn"
+          class="auth-btn"
+          style="display: none"
+          onclick="signOut()"
+        >
+          Sign out
+        </button>
+        <div id="profile-avatar" class="profile-avatar" style="display: none">
+          S
+        </div>
+      </div>
+    </div>
+
+    <div id="side-panel">
+      <button
+        class="side-tab"
+        id="tut-sidebar"
+        onclick="openSidePanel('calendar')"
+      >
+        📅
+      </button>
+      <button class="side-tab" onclick="openSidePanel('keep')">💡</button>
+      <button class="side-tab" onclick="openSidePanel('tasks')">✅</button>
+      <button class="side-tab" onclick="openSidePanel('drive')">📁</button>
+    </div>
+
+    <div id="expanded-side-panel">
+      <div class="ep-header">
+        <span id="ep-title" style="font-weight: 500">Apps</span>
+        <button class="ep-close" onclick="closeSidePanel()">✕</button>
+      </div>
+      <div class="ep-content" id="ep-calendar" style="display: none">
+        <div id="calendar-feed">
+          <div style="padding: 20px; text-align: center">
+            Sign in to view events
+          </div>
+        </div>
+      </div>
+      <div class="ep-content" id="ep-keep" style="display: none">
+        <textarea
+          id="keep-input"
+          class="global-input"
+          placeholder="Take a note..."
+          style="width: 100%; height: 80px; resize: none; margin-bottom: 8px"
+        ></textarea>
+        <button
+          onclick="saveKeepNote()"
+          class="primary-btn"
+          style="width: 100%; margin-bottom: 16px"
+        >
+          Save Note
+        </button>
+        <div id="keep-feed"></div>
+      </div>
+      <div class="ep-content" id="ep-tasks" style="display: none">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px">
+          <input
+            type="text"
+            id="task-input"
+            class="global-input"
+            placeholder="Add a task"
+            style="flex-grow: 1"
+          />
+          <button onclick="saveTask()" class="primary-btn">Add</button>
+        </div>
+        <div id="tasks-feed"></div>
+      </div>
+      <div class="ep-content" id="ep-drive" style="display: none">
+        <div id="drive-feed">
+          <div style="padding: 20px; text-align: center">
+            Sign in to view files
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="share-modal">
+      <h2 style="margin: 0 0 16px 0; font-weight: 400; font-size: 22px">
+        Share Magic Link
+      </h2>
+      <p
+        style="
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-bottom: 16px;
+        "
+      >
+        This magic link compresses your layout into a URL.
+      </p>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <button class="secondary-btn" onclick="copyShareLink()">
+          🔗 Copy Magic Link
+        </button>
+        <button class="primary-btn" onclick="closeShareModal()">Done</button>
+      </div>
+    </div>
+
+    <div id="home-screen">
+      <div class="template-gallery">
+        <div class="template-header">
+          <button
+            onclick="switchHomeTab('workspaces')"
+            class="primary-btn"
+            style="margin-right: 8px; padding: 6px 12px; font-size: 13px"
+          >
+            Active Workspaces
+          </button>
+          <button
+            onclick="switchHomeTab('bin')"
+            class="secondary-btn"
+            style="padding: 6px 12px; font-size: 13px"
+          >
+            Trash Bin
+          </button>
+        </div>
+        <div class="template-grid" id="home-create-section">
+          <div class="template-card" onclick="createNewWorkspace()">
+            <div class="template-thumb blank-thumb">
+              <span
+                style="
+                  font-size: 48px;
+                  color: var(--google-blue);
+                  font-weight: 300;
+                "
+                >+</span
+              >
+            </div>
+            <div class="template-name">Blank Matrix</div>
+          </div>
+        </div>
+      </div>
+      <div id="active-workspaces-view" class="recent-files">
+        <div class="recent-header">Your Saved Workspaces</div>
+        <div id="local-workspaces-feed" class="recent-grid">
+          <div style="padding: 20px; color: var(--text-secondary)">
+            No saved workspaces yet.
+          </div>
+        </div>
+      </div>
+      <div id="bin-view" class="recent-files" style="display: none">
+        <div
+          class="recent-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          Deleted Workspaces
+          <button
+            onclick="emptyBin()"
+            class="secondary-btn"
+            style="padding: 4px 12px; font-size: 12px; color: var(--google-red)"
+          >
+            Empty Bin
+          </button>
+        </div>
+        <div id="bin-feed" class="recent-grid">
+          <div style="padding: 20px; color: var(--text-secondary)">
+            Bin is empty.
+          </div>
+        </div>
+      </div>
+      <div class="recent-files">
+        <div class="recent-header" style="display: flex; align-items: center">
+          Recent Google Drive Files
+          <button
+            onclick="startSlideshow()"
+            class="primary-btn"
+            style="margin-left: 16px; padding: 4px 12px; font-size: 12px"
+          >
+            📽️ Play Slideshow
+          </button>
+        </div>
+        <div id="home-recent-feed" class="recent-grid">
+          <div style="padding: 20px; color: var(--text-secondary)">
+            Sign in to view Drive files
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="workspace-screen" style="display: none">
+      <div id="audio-hud">
+        <div class="hud-title">
+          <span class="audio-pulse"></span> Orbit Matrix Info
+        </div>
+        <div id="distance-tracker">Tracking canvas...</div>
+      </div>
+
+      <div id="minimap-container">
+        <div id="minimap-viewport"></div>
+        <div id="minimap-nodes"></div>
+      </div>
+
+      <div id="canvas-creation-hub">
+        <button
+          class="fab-btn"
+          onclick="toggleCreationMenu(event)"
+          title="Add Asset"
+        >
+          +
+        </button>
+        <div id="creation-popover">
+          <div class="popover-section-title">Google Cloud Imports</div>
+          <div class="popover-row">
+            <button class="popover-action blue" onclick="openFilePicker('doc')">
+              📄 Add Existing Doc
+            </button>
+            <button
+              class="popover-action green"
+              onclick="openFilePicker('sheet')"
+            >
+              📊 Add Existing Sheet
+            </button>
+            <button
+              class="popover-action yellow"
+              onclick="openFilePicker('slide')"
+            >
+              🖼️ Add Existing Slide
+            </button>
+          </div>
+          <div class="popover-divider"></div>
+          <div class="popover-section-title">Generate Blank Asset</div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <input
+              type="text"
+              id="blank-asset-title"
+              class="global-input"
+              placeholder="Asset title..."
+              style="font-size: 12px; padding: 6px 10px"
+            />
+            <div style="display: flex; gap: 6px">
+              <button
+                class="popover-action min blue"
+                onclick="spawnBlankNode('doc')"
+              >
+                📄 Doc
+              </button>
+              <button
+                class="popover-action min green"
+                onclick="spawnBlankNode('sheet')"
+              >
+                📊 Sheet
+              </button>
+              <button
+                class="popover-action min yellow"
+                onclick="spawnBlankNode('slide')"
+              >
+                🖼️ Slide
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="temporal-scrubber">
+        <span class="time-label">⏳ Timeline History</span>
+        <input
+          type="range"
+          id="history-slider"
+          min="0"
+          max="0"
+          value="0"
+          step="1"
+        />
+        <span id="time-status" class="time-label clear-label">Live State</span>
+      </div>
+
+      <div id="gemini-panel">
+        <div class="gemini-header">
+          <h3>✨ Orbit AI Assistant</h3>
+          <button
+            onclick="toggleGemini()"
+            style="
+              background: none;
+              border: none;
+              cursor: pointer;
+              font-size: 16px;
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <div id="gemini-chat">
+          <div class="chat-message ai-message">
+            Hello! I can analyze your canvas open documents locally using
+            Ollama.
+          </div>
+        </div>
+        <div class="gemini-input-area">
+          <input
+            type="text"
+            id="gemini-input"
+            class="global-input"
+            placeholder="Ask about canvas..."
+            onkeypress="handleGeminiEnter(event)"
+          />
+          <button
+            class="primary-btn"
+            style="border-radius: 20px"
+            onclick="askGemini()"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+
+      <div id="edit-modal">
+        <div class="modal-header">
+          <span id="modal-title" style="font-weight: 500; font-size: 16px"
+            >Editing Document</span
+          >
+          <button class="modal-close" onclick="closeEditModal()">
+            Done Editing ✕
+          </button>
+        </div>
+        <iframe id="edit-frame" src=""></iframe>
+      </div>
+
+      <div
+        id="presentation-modal"
+        style="
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: #000;
+          z-index: 9999;
+          flex-direction: column;
+        "
+      >
+        <button
+          onclick="closePresentation()"
+          style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          Exit Presentation ✕
+        </button>
+        <iframe
+          id="presentation-frame"
+          src=""
+          style="width: 100%; height: 100%; border: none"
+        ></iframe>
+      </div>
+
+      <div
+        id="slideshow-modal"
+        style="
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.9);
+          z-index: 9999;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 10000;
+            display: flex;
+            gap: 8px;
+          "
+        >
+          <button
+            onclick="prevSlide()"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            &larr; Prev
+          </button>
+          <button
+            onclick="toggleSlidePlay()"
+            id="slide-play-btn"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Pause
+          </button>
+          <button
+            onclick="nextSlide()"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Next &rarr;
+          </button>
+          <button
+            onclick="closeSlideshow()"
+            style="
+              background: var(--google-red);
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            ✕ Exit
+          </button>
+        </div>
+        <iframe
+          id="slideshow-frame"
+          src=""
+          style="
+            width: 85%;
+            height: 85%;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+          "
+        ></iframe>
+      </div>
+
+      <div id="viewport">
+        <div id="canvas-container">
+          <svg id="svg-layer"></svg>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
