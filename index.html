@@ -3,12 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Orbit Matrix</title>
+    <title>Google Orbit MVP</title>
     <link rel="stylesheet" href="style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script type="module">
+      import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+      window.webllm = webllm;
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
   </head>
@@ -526,19 +530,19 @@
             <div style="display: flex; gap: 6px">
               <button
                 class="popover-action min blue"
-                onclick="spawnBlankNode('doc')"
+                onclick="spawnBlankNodeDrive('doc')"
               >
                 📄 Doc
               </button>
               <button
                 class="popover-action min green"
-                onclick="spawnBlankNode('sheet')"
+                onclick="spawnBlankNodeDrive('sheet')"
               >
                 📊 Sheet
               </button>
               <button
                 class="popover-action min yellow"
-                onclick="spawnBlankNode('slide')"
+                onclick="spawnBlankNodeDrive('slide')"
               >
                 🖼️ Slide
               </button>
