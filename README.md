@@ -65,7 +65,7 @@ Origin Locking: Keep your active credentials locked specifically down to your un
 
 🐛 Known Bugs & Future Fixes
 Most of the known bugs have been fixed.Switched to Web based LLM Llama-3.2-1B so now the browser does not block http requests since it is built within the browser.
-But the AI is a bit of cranky as it was not designed for the website and was a common model available in the web.Beware!!
+But the AI is a bit of cranky as it was not designed for the website and was a common model available in the web and also a bit slow than your normal AI.Beware!!
 
 ### It would be great if the google Dev community can test this out since I had mostly focused on building this to support Google's existing features like docs, sheets & slides.
 
