@@ -1,5 +1,4 @@
-const GOOGLE_CLIENT_ID =
-  "303731717202-l9fues9ul9c1t8v0n5r7idtugui7cska.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "303731717202-l9fues9ul9c1t8v0n5r7idtugui7cska.apps.googleusercontent.com";
 let DEVELOPER_KEY = localStorage.getItem("orbit_dev_key") || "";
 const viewport = document.getElementById("viewport");
 const container = document.getElementById("canvas-container");
@@ -37,16 +36,12 @@ function checkDeveloperKeyRequirement() {
 function saveDeveloperKeyFromModal() {
   const inputVal = document.getElementById("modal-key-input").value.trim();
   if (!inputVal) {
-    alert(
-      "An API key is required to render and serve the interactive cloud workspace environment.",
-    );
+    alert("An API key is required to render and serve the interactive cloud workspace environment.");
     return;
   }
   const googleKeyPattern = /^AIzaSy[A-Za-z0-9_-]{33}$/;
   if (!googleKeyPattern.test(inputVal)) {
-    alert(
-      "Invalid Key Format! A valid Google Cloud API Key must start with 'AIzaSy' and be exactly 39 characters long. Please check your key and try again.",
-    );
+    alert("Invalid Key Format! A valid Google Cloud API Key must start with 'AIzaSy' and be exactly 39 characters long. Please check your key and try again.");
     return;
   }
   DEVELOPER_KEY = inputVal;
@@ -70,9 +65,7 @@ function updateTransform() {
   container.style.transform = `matrix(${zoom}, 0, 0, ${zoom}, ${pan.x}, ${pan.y})`;
   const centerX = (-pan.x + window.innerWidth / 2) / zoom;
   const centerY = (-pan.y + window.innerHeight / 2) / zoom;
-  const dist = Math.round(
-    Math.sqrt(Math.pow(centerX - 5000, 2) + Math.pow(centerY - 5050, 2)),
-  );
+  const dist = Math.round(Math.sqrt(Math.pow(centerX - 5000, 2) + Math.pow(centerY - 5050, 2)));
   if (audioTracker) {
     audioTracker.innerText = `Workspace Dist: ${dist}px | Scale: ${Math.round(zoom * 100)}%`;
   }
@@ -115,10 +108,7 @@ document.addEventListener("click", (e) => {
 function spawnBlankNode(type) {
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
-  let title =
-    titleInput && titleInput.value.trim()
-      ? titleInput.value.trim()
-      : `Untitled ${type.toUpperCase()}`;
+  let title = titleInput && titleInput.value.trim() ? titleInput.value.trim() : `Untitled ${type.toUpperCase()}`;
   nodeIdCounter++;
   const node = document.createElement("div");
   node.className = `orbit-node ${type}-node`;
@@ -127,12 +117,7 @@ function spawnBlankNode(type) {
   node.setAttribute("data-type", type);
   node.style.left = `${(-pan.x + window.innerWidth / 2) / zoom - 190}px`;
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom - 140}px`;
-  let txt =
-    type === "sheet"
-      ? "Empty data grid layout workspace. Connect a live cloud file schema matrix."
-      : type === "slide"
-        ? "Blank graphics slide frame template matrix."
-        : "Click 'Edit' (✏️) to connect an enterprise cloud resource document asset.";
+  let txt = type === "sheet" ? "Empty data grid layout workspace. Connect a live cloud file schema matrix." : type === "slide" ? "Blank graphics slide frame template matrix." : "Click 'Edit' (✏️) to connect an enterprise cloud resource document asset.";
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${title}</span>
@@ -189,24 +174,9 @@ function filterPalette() {
 }
 let currentTutorialStep = 0;
 const tutorialSteps = [
-  {
-    elementId: "tut-logo",
-    title: "Central Hub",
-    text: "Clicking the dynamic Orbit logo drops you out of the matrix canvas view and takes you back to your Dashboard home.",
-    position: "bottom",
-  },
-  {
-    elementId: "tut-sidebar",
-    title: "App Ecosystem",
-    text: "Access companion apps directly on your right panel.",
-    position: "left",
-  },
-  {
-    elementId: "tut-gemini",
-    title: "Orbit AI",
-    text: "Trigger the local app assistant to automatically extract and read text components from open documents.",
-    position: "left",
-  },
+  { elementId: "tut-logo", title: "Central Hub", text: "Clicking the dynamic Orbit logo drops you out of the matrix canvas view and takes you back to your Dashboard home.", position: "bottom" },
+  { elementId: "tut-sidebar", title: "App Ecosystem", text: "Access companion apps directly on your right panel.", position: "left" },
+  { elementId: "tut-gemini", title: "Orbit AI", text: "Trigger the local app assistant to automatically extract and read text components from open documents.", position: "left" },
 ];
 function launchTutorialSequence() {
   if (localStorage.getItem("orbit_tutorial_completed") === "true") return;
@@ -216,9 +186,7 @@ function launchTutorialSequence() {
   renderTutorialStep();
 }
 function renderTutorialStep() {
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
+  document.querySelectorAll(".tut-highlight").forEach((el) => el.classList.remove("tut-highlight"));
   const step = tutorialSteps[currentTutorialStep];
   const targetEl = document.getElementById(step.elementId);
   const boxEl = document.getElementById("tutorial-box");
@@ -247,8 +215,7 @@ function renderTutorialStep() {
     boxEl.style.left = `${rect.left - 340}px`;
     boxEl.style.transform = "none";
   }
-  document.getElementById("tutorial-next-btn").innerText =
-    currentTutorialStep === tutorialSteps.length - 1 ? "Finish 🎉" : "Next →";
+  document.getElementById("tutorial-next-btn").innerText = currentTutorialStep === tutorialSteps.length - 1 ? "Finish 🎉" : "Next →";
 }
 function nextTutorialStep() {
   if (currentTutorialStep < tutorialSteps.length - 1) {
@@ -259,9 +226,7 @@ function nextTutorialStep() {
   }
 }
 function skipTutorial() {
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
+  document.querySelectorAll(".tut-highlight").forEach((el) => el.classList.remove("tut-highlight"));
   document.getElementById("tutorial-overlay").style.display = "none";
   document.getElementById("tutorial-box").style.display = "none";
   localStorage.setItem("orbit_tutorial_completed", "true");
@@ -294,6 +259,10 @@ function createNewWorkspace() {
   stateHistory = [];
   drawThreads();
   document.getElementById("workspace-title").value = "Untitled Workspace";
+  const chatFeed = document.getElementById("gemini-chat");
+  if (chatFeed) {
+    chatFeed.innerHTML = `<div class="chat-message ai-message">Hello! I can analyze your canvas open documents locally using Llama.</div>`;
+  }
   saveCurrentWorkspace("Blank Workspace Created");
   openWorkspaceScreen();
 }
@@ -316,6 +285,14 @@ function loadWorkspace(id) {
     projectThreads = ws.threads || [];
     stateHistory = ws.history || [];
     drawThreads();
+    const chatFeed = document.getElementById("gemini-chat");
+    if (chatFeed) {
+      if (ws.chatHistoryHTML) {
+        chatFeed.innerHTML = ws.chatHistoryHTML;
+      } else {
+        chatFeed.innerHTML = `<div class="chat-message ai-message">Hello! I can analyze your canvas open documents locally using Llama.</div>`;
+      }
+    }
     if (historySlider) {
       historySlider.max = stateHistory.length > 0 ? stateHistory.length - 1 : 0;
       historySlider.value = historySlider.max;
@@ -324,12 +301,9 @@ function loadWorkspace(id) {
   }
 }
 function switchHomeTab(tab) {
-  document.getElementById("active-workspaces-view").style.display =
-    tab === "workspaces" ? "block" : "none";
-  document.getElementById("home-create-section").style.display =
-    tab === "workspaces" ? "flex" : "none";
-  document.getElementById("bin-view").style.display =
-    tab === "bin" ? "block" : "none";
+  document.getElementById("active-workspaces-view").style.display = tab === "workspaces" ? "block" : "none";
+  document.getElementById("home-create-section").style.display = tab === "workspaces" ? "flex" : "none";
+  document.getElementById("bin-view").style.display = tab === "bin" ? "block" : "none";
   renderHomeWorkspaces();
 }
 function trashWorkspace(e, id) {
@@ -348,24 +322,16 @@ async function spawnBlankNodeDrive(type) {
   }
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
-  let title =
-    titleInput && titleInput.value.trim()
-      ? titleInput.value.trim()
-      : `Untitled ${type.toUpperCase()}`;
+  let title = titleInput && titleInput.value.trim() ? titleInput.value.trim() : `Untitled ${type.toUpperCase()}`;
   triggerToast("Creating asset container matrix architecture...");
   let mimeType = "";
   if (type === "doc") mimeType = "application/vnd.google-apps.document";
-  else if (type === "sheet")
-    mimeType = "application/vnd.google-apps.spreadsheet";
-  else if (type === "slide")
-    mimeType = "application/vnd.google-apps.presentation";
+  else if (type === "sheet") mimeType = "application/vnd.google-apps.spreadsheet";
+  else if (type === "slide") mimeType = "application/vnd.google-apps.presentation";
   try {
     const response = await fetch("https://www.googleapis.com/drive/v3/files", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ name: title, mimeType: mimeType }),
     });
     if (!response.ok) throw new Error("API Error");
@@ -409,15 +375,10 @@ function renderHomeWorkspaces() {
   const binFeed = document.getElementById("bin-feed");
   if (!activeFeed || !binFeed) return;
   let workspaces = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
-  let activeWs = workspaces
-    .filter((w) => !w.isDeleted)
-    .sort((a, b) => b.lastModified - a.lastModified);
-  let binWs = workspaces
-    .filter((w) => w.isDeleted)
-    .sort((a, b) => b.lastModified - a.lastModified);
+  let activeWs = workspaces.filter((w) => !w.isDeleted).sort((a, b) => b.lastModified - a.lastModified);
+  let binWs = workspaces.filter((w) => w.isDeleted).sort((a, b) => b.lastModified - a.lastModified);
   if (activeWs.length === 0) {
-    activeFeed.innerHTML =
-      '<div style="padding:20px;color:var(--text-secondary);">No saved workspaces yet. Click Blank Matrix to start!</div>';
+    activeFeed.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">No saved workspaces yet. Click Blank Matrix to start!</div>';
   } else {
     activeFeed.innerHTML = "";
     activeWs.forEach((ws) => {
@@ -433,8 +394,7 @@ function renderHomeWorkspaces() {
     });
   }
   if (binWs.length === 0) {
-    binFeed.innerHTML =
-      '<div style="padding:20px;color:var(--text-secondary);">Bin is empty.</div>';
+    binFeed.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">Bin is empty.</div>';
   } else {
     binFeed.innerHTML = "";
     binWs.forEach((ws) => {
@@ -455,19 +415,8 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
   if (!activeWorkspaceId || isScrubbing) return;
   drawThreads();
   let workspaces = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
-  const nodes = Array.from(document.querySelectorAll(".orbit-node")).map(
-    (node) => ({
-      id: node.id,
-      html: node.outerHTML,
-      left: node.style.left,
-      top: node.style.top,
-    }),
-  );
-  stateHistory.push({
-    label: actionName,
-    nodes: nodes,
-    threads: [...projectThreads],
-  });
+  const nodes = Array.from(document.querySelectorAll(".orbit-node")).map((node) => ({ id: node.id, html: node.outerHTML, left: node.style.left, top: node.style.top }));
+  stateHistory.push({ label: actionName, nodes: nodes, threads: [...projectThreads] });
   if (historySlider) {
     historySlider.max = stateHistory.length > 0 ? stateHistory.length - 1 : 0;
     historySlider.value = historySlider.max;
@@ -476,16 +425,10 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
     timeStatus.innerText = actionName;
     timeStatus.style.color = "var(--google-green)";
   }
+  const chatFeed = document.getElementById("gemini-chat");
+  const currentChatHTML = chatFeed ? chatFeed.innerHTML : "";
   const wsIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
-  const wsData = {
-    id: activeWorkspaceId,
-    title: document.getElementById("workspace-title").value,
-    nodes: nodes,
-    threads: projectThreads,
-    history: stateHistory,
-    lastModified: Date.now(),
-    isDeleted: false,
-  };
+  const wsData = { id: activeWorkspaceId, title: document.getElementById("workspace-title").value, nodes: nodes, threads: projectThreads, history: stateHistory, chatHistoryHTML: currentChatHTML, lastModified: Date.now(), isDeleted: false };
   if (wsIndex > -1) {
     workspaces[wsIndex] = wsData;
   } else {
@@ -500,12 +443,8 @@ if (historySlider) {
     const index = parseInt(e.target.value);
     const state = stateHistory[index];
     if (!state) return;
-    timeStatus.innerText =
-      state.label + (index === stateHistory.length - 1 ? " (Live)" : " (Past)");
-    timeStatus.style.color =
-      index === stateHistory.length - 1
-        ? "var(--google-green)"
-        : "var(--google-blue)";
+    timeStatus.innerText = state.label + (index === stateHistory.length - 1 ? " (Live)" : " (Past)");
+    timeStatus.style.color = index === stateHistory.length - 1 ? "var(--google-green)" : "var(--google-blue)";
     projectThreads = [...state.threads];
     document.querySelectorAll(".orbit-node").forEach((n) => n.remove());
     state.nodes.forEach((nodeData) => {
@@ -556,12 +495,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTransform();
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("matrix")) {
-      const dataState = JSON.parse(
-        decodeURIComponent(atob(urlParams.get("matrix"))),
-      );
+      const dataState = JSON.parse(decodeURIComponent(atob(urlParams.get("matrix"))));
       activeWorkspaceId = "shared_" + Date.now();
-      document.getElementById("workspace-title").value =
-        "Shared External Workspace";
+      document.getElementById("workspace-title").value = "Shared External Workspace";
       projectThreads = dataState.threads || [];
       document.querySelectorAll(".orbit-node").forEach((n) => n.remove());
       dataState.nodes.forEach((nodeData) => {
@@ -625,12 +561,8 @@ function openMenu(menuId, element) {
 }
 function closeAllMenus() {
   activeMenu = null;
-  document
-    .querySelectorAll(".dropdown-menu")
-    .forEach((menu) => (menu.style.display = "none"));
-  document
-    .querySelectorAll(".menu-item")
-    .forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".dropdown-menu").forEach((menu) => (menu.style.display = "none"));
+  document.querySelectorAll(".menu-item").forEach((item) => item.classList.remove("active"));
 }
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".google-menu-bar")) {
@@ -671,22 +603,10 @@ function copyShareLink() {
 }
 function mixLayoutSnapshot() {
   try {
-    const activeNodesSnapshot = Array.from(
-      document.querySelectorAll(".orbit-node"),
-    ).map((node) => ({
-      id: node.id,
-      html: node.outerHTML,
-      left: node.style.left,
-      top: node.style.top,
-    }));
-    const b64 = btoa(
-      encodeURIComponent(
-        JSON.stringify({ nodes: activeNodesSnapshot, threads: projectThreads }),
-      ),
-    );
-    navigator.clipboard.writeText(
-      window.location.origin + window.location.pathname + "?matrix=" + b64,
-    );
+    const activeNodesSnapshot = Array.from(document.querySelectorAll(".orbit-node")).map((node) => ({ id: node.id, html: node.outerHTML, left: node.style.left, top: node.style.top }));
+    const b64 = btoa(encodeURIComponent(JSON.stringify({ nodes: activeNodesSnapshot, threads: projectThreads })));
+    const baseShareUrl = window.location.href.split('?')[0];
+    navigator.clipboard.writeText(baseShareUrl + "?matrix=" + b64);
     triggerToast("Magic Link copied!");
     closeShareModal();
   } catch (err) {
@@ -694,13 +614,9 @@ function mixLayoutSnapshot() {
   }
 }
 function openSidePanel(tabName) {
-  document
-    .querySelectorAll(".side-tab")
-    .forEach((tab) => tab.classList.remove("active-tab"));
+  document.querySelectorAll(".side-tab").forEach((tab) => tab.classList.remove("active-tab"));
   event.currentTarget.classList.add("active-tab");
-  document
-    .querySelectorAll(".ep-content")
-    .forEach((content) => (content.style.display = "none"));
+  document.querySelectorAll(".ep-content").forEach((content) => (content.style.display = "none"));
   document.getElementById(`ep-${tabName}`).style.display = "block";
   let title = "Google Apps";
   if (tabName === "calendar") {
@@ -724,22 +640,13 @@ function openSidePanel(tabName) {
 }
 function closeSidePanel() {
   document.getElementById("expanded-side-panel").classList.remove("open");
-  document
-    .querySelectorAll(".side-tab")
-    .forEach((tab) => tab.classList.remove("active-tab"));
+  document.querySelectorAll(".side-tab").forEach((tab) => tab.classList.remove("active-tab"));
 }
 async function fetchCalendarEvents() {
   const feed = document.getElementById("calendar-feed");
-  feed.innerHTML =
-    '<div style="text-align:center; padding:10px; font-weight:500;">Upcoming Events</div>';
+  feed.innerHTML = '<div style="text-align:center; padding:10px; font-weight:500;">Upcoming Events</div>';
   try {
-    const response = await gapi.client.calendar.events.list({
-      calendarId: "primary",
-      timeMin: new Date().toISOString(),
-      singleEvents: true,
-      maxResults: 5,
-      orderBy: "startTime",
-    });
+    const response = await gapi.client.calendar.events.list({ calendarId: "primary", timeMin: new Date().toISOString(), singleEvents: true, maxResults: 5, orderBy: "startTime" });
     if (!response.result.items || response.result.items.length === 0) {
       feed.innerHTML += '<div class="ep-item">No upcoming events found.</div>';
       return;
@@ -754,25 +661,13 @@ async function fetchCalendarEvents() {
 }
 async function fetchDriveFiles() {
   const feed = document.getElementById("drive-feed");
-  feed.innerHTML =
-    '<div style="text-align:center; padding:10px; font-weight:500;">Recent Files</div>';
+  feed.innerHTML = '<div style="text-align:center; padding:10px; font-weight:500;">Recent Files</div>';
   try {
-    const response = await gapi.client.drive.files.list({
-      pageSize: 6,
-      fields: "files(id, name, mimeType)",
-      orderBy: "viewedByMeTime desc",
-    });
+    const response = await gapi.client.drive.files.list({ pageSize: 6, fields: "files(id, name, mimeType)", orderBy: "viewedByMeTime desc" });
     response.result.files.forEach((file) => {
-      let icon = "📄",
-        type = "doc";
-      if (file.mimeType.includes("spreadsheet")) {
-        icon = "📊";
-        type = "sheet";
-      }
-      if (file.mimeType.includes("presentation")) {
-        icon = "🖼️";
-        type = "slide";
-      }
+      let icon = "📄", type = "doc";
+      if (file.mimeType.includes("spreadsheet")) { icon = "📊"; type = "sheet"; }
+      if (file.mimeType.includes("presentation")) { icon = "🖼️"; type = "slide"; }
       feed.innerHTML += `<div class="ep-item" style="cursor:pointer;" onclick="spawnCloudNode('${type}', '${file.id}', '${file.name.replace(/'/g, "\\'")}')"><strong>${icon} Click to drop</strong> ${file.name}</div>`;
     });
   } catch (err) {
@@ -782,42 +677,20 @@ async function fetchDriveFiles() {
 async function fetchHomeDriveFiles() {
   const feed = document.getElementById("home-recent-feed");
   if (!feed) return;
-  feed.innerHTML =
-    '<div class="google-spinner" style="margin:40px auto;"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg></div>';
+  feed.innerHTML = '<div class="google-spinner" style="margin:40px auto;"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg></div>';
   try {
-    const response = await gapi.client.drive.files.list({
-      pageSize: 16,
-      fields: "files(id, name, mimeType)",
-      orderBy: "viewedByMeTime desc",
-    });
+    const response = await gapi.client.drive.files.list({ pageSize: 16, fields: "files(id, name, mimeType)", orderBy: "viewedByMeTime desc" });
     feed.innerHTML = "";
     if (!response.result.files || response.result.files.length === 0) {
-      feed.innerHTML =
-        '<div style="padding:20px; color:var(--text-secondary);">No recent files found.</div>';
+      feed.innerHTML = '<div style="padding:20px; color:var(--text-secondary);">No recent files found.</div>';
       return;
     }
-    slideFiles = response.result.files.filter(
-      (f) =>
-        f.mimeType.includes("presentation") || f.mimeType.startsWith("image/"),
-    );
+    slideFiles = response.result.files.filter((f) => f.mimeType.includes("presentation") || f.mimeType.startsWith("image/"));
     response.result.files.slice(0, 12).forEach((file) => {
-      let icon = "📄",
-        type = "doc",
-        color = "var(--google-blue)";
-      if (file.mimeType.includes("spreadsheet")) {
-        icon = "📊";
-        type = "sheet";
-        color = "var(--google-green)";
-      }
-      if (file.mimeType.includes("presentation")) {
-        icon = "🖼️";
-        type = "slide";
-        color = "var(--google-yellow)";
-      } else if (file.mimeType.startsWith("image/")) {
-        icon = "🖼️";
-        type = "slide";
-        color = "var(--google-yellow)";
-      }
+      let icon = "📄", type = "doc", color = "var(--google-blue)";
+      if (file.mimeType.includes("spreadsheet")) { icon = "📊"; type = "sheet"; color = "var(--google-green)"; }
+      if (file.mimeType.includes("presentation")) { icon = "🖼️"; type = "slide"; color = "var(--google-yellow)"; }
+      else if (file.mimeType.startsWith("image/")) { icon = "🖼️"; type = "slide"; color = "var(--google-yellow)"; }
       feed.innerHTML += `
             <div class="recent-card" onclick="openWorkspaceScreen(); spawnCloudNode('${type}', '${file.id}', '${file.name.replace(/'/g, "\\'")}')">
                 <span style="font-size:24px; color:${color};">${icon}</span>
@@ -829,18 +702,13 @@ async function fetchHomeDriveFiles() {
   }
 }
 function startSlideshow() {
-  if (slideFiles.length === 0) {
-    triggerToast("No visual files found for slideshow.");
-    return;
-  }
+  if (slideFiles.length === 0) { triggerToast("No visual files found for slideshow."); return; }
   document.getElementById("slideshow-modal").style.display = "flex";
   currentSlide = 0;
   slideIsPlaying = true;
   document.getElementById("slide-play-btn").innerText = "Pause";
   showSlide();
-  slideInterval = setInterval(() => {
-    if (slideIsPlaying) nextSlide();
-  }, 4000);
+  slideInterval = setInterval(() => { if (slideIsPlaying) nextSlide(); }, 4000);
 }
 function closeSlideshow() {
   document.getElementById("slideshow-modal").style.display = "none";
@@ -850,22 +718,13 @@ function closeSlideshow() {
 function showSlide() {
   if (currentSlide >= slideFiles.length) currentSlide = 0;
   if (currentSlide < 0) currentSlide = slideFiles.length - 1;
-  document.getElementById("slideshow-frame").src =
-    `https://drive.google.com/file/d/${slideFiles[currentSlide].id}/preview`;
+  document.getElementById("slideshow-frame").src = `https://drive.google.com/file/d/${slideFiles[currentSlide].id}/preview`;
 }
-function nextSlide() {
-  currentSlide++;
-  showSlide();
-}
-function prevSlide() {
-  currentSlide--;
-  showSlide();
-}
+function nextSlide() { currentSlide++; showSlide(); }
+function prevSlide() { currentSlide--; showSlide(); }
 function toggleSlidePlay() {
   slideIsPlaying = !slideIsPlaying;
-  document.getElementById("slide-play-btn").innerText = slideIsPlaying
-    ? "Play"
-    : "Pause";
+  document.getElementById("slide-play-btn").innerText = slideIsPlaying ? "Play" : "Pause";
 }
 function saveKeepNote() {
   const input = document.getElementById("keep-input");
@@ -882,8 +741,7 @@ function renderKeepNotes() {
   if (!feed) return;
   let notes = JSON.parse(localStorage.getItem("orbit_notes") || "[]");
   feed.innerHTML = "";
-  if (notes.length === 0)
-    feed.innerHTML = '<div class="ep-item">No notes saved.</div>';
+  if (notes.length === 0) feed.innerHTML = '<div class="ep-item">No notes saved.</div>';
   notes.forEach((note, i) => {
     feed.innerHTML += `<div class="ep-item" style="position:relative; padding-right:24px;">${note}<button style="position:absolute; right:4px; top:4px; border:none; background:none; cursor:pointer; color:var(--google-red);" onclick="deleteKeepNote(${i})">✕</button></div>`;
   });
@@ -923,13 +781,9 @@ function renderTasks() {
   if (!feed) return;
   let tasks = JSON.parse(localStorage.getItem("orbit_tasks") || "[]");
   feed.innerHTML = "";
-  if (tasks.length === 0)
-    feed.innerHTML =
-      '<div class="task-item" style="text-align:center; padding:20px;">No tasks yet</div>';
+  if (tasks.length === 0) feed.innerHTML = '<div class="task-item" style="text-align:center; padding:20px;">No tasks yet</div>';
   tasks.forEach((task, i) => {
-    const textStyle = task.done
-      ? "text-decoration:line-through; color:var(--text-secondary);"
-      : "";
+    const textStyle = task.done ? "text-decoration:line-through; color:var(--text-secondary);" : "";
     feed.innerHTML += `<div class="task-item"><input type="checkbox" onchange="toggleTask(${i})" ${task.done ? "checked" : ""}><span style="flex-grow:1; font-size:14px; ${textStyle}">${task.text}</span><button class="task-delete" onclick="removeTask(${i})">✕</button></div>`;
   });
 }
@@ -943,9 +797,7 @@ function toggleLinkMode(nodeId) {
     });
   } else {
     if (linkSourceNode === nodeId) {
-      document
-        .getElementById(linkSourceNode)
-        .classList.remove("linking-active");
+      document.getElementById(linkSourceNode).classList.remove("linking-active");
       document.getElementById("linking-status").style.display = "none";
       linkSourceNode = null;
       document.querySelectorAll(".orbit-node .link-overlay").forEach((el) => {
@@ -992,10 +844,7 @@ function drawThreads() {
       const y1 = nodeA.offsetTop + nodeA.offsetHeight / 2;
       const x2 = nodeB.offsetLeft + nodeB.offsetWidth / 2;
       const y2 = nodeB.offsetTop + nodeB.offsetHeight / 2;
-      path.setAttribute(
-        "d",
-        `M ${x1} ${y1} C ${x1 + Math.abs(x2 - x1) * 0.4} ${y1}, ${x2 - Math.abs(x2 - x1) * 0.4} ${y2}, ${x2} ${y2}`,
-      );
+      path.setAttribute("d", `M ${x1} ${y1} C ${x1 + Math.abs(x2 - x1) * 0.4} ${y1}, ${x2 - Math.abs(x2 - x1) * 0.4} ${y2}, ${x2} ${y2}`);
       path.style.display = "block";
     } else if (path) {
       path.style.display = "none";
@@ -1016,9 +865,7 @@ function toggleFocusMode(nodeId) {
 }
 function closeAllFocus() {
   document.getElementById("focus-backdrop").style.display = "none";
-  document
-    .querySelectorAll(".focused-node")
-    .forEach((n) => n.classList.remove("focused-node"));
+  document.querySelectorAll(".focused-node").forEach((n) => n.classList.remove("focused-node"));
   container.style.pointerEvents = "auto";
 }
 viewport.addEventListener("mousedown", (e) => {
@@ -1046,9 +893,7 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("mouseup", () => {
   isDragging = false;
 });
-viewport.addEventListener(
-  "wheel",
-  (e) => {
+viewport.addEventListener("wheel", (e) => {
     if (
       e.target.closest(".orbit-node") ||
       document.querySelector(".focused-node") ||
@@ -1065,24 +910,13 @@ viewport.addEventListener(
     pan.y = e.clientY - (e.clientY - pan.y) * (nz / zoom);
     zoom = nz;
     updateTransform();
-  },
-  { passive: false },
+  }, { passive: false }
 );
 function makeElementDraggable(elmnt) {
-  let pos1 = 0,
-    pos2 = 0,
-    pos3 = 0,
-    pos4 = 0,
-    header = elmnt.querySelector(".node-header"),
-    dragFrame = null;
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0, header = elmnt.querySelector(".node-header"), dragFrame = null;
   if (header) {
     header.onmousedown = (e) => {
-      if (
-        e.target.closest(".action-btn") ||
-        elmnt.classList.contains("focused-node") ||
-        linkSourceNode
-      )
-        return;
+      if (e.target.closest(".action-btn") || elmnt.classList.contains("focused-node") || linkSourceNode) return;
       document.body.classList.add("dragging-active");
       elmnt.classList.add("is-moving");
       pos3 = e.clientX;
@@ -1099,9 +933,7 @@ function makeElementDraggable(elmnt) {
     elmnt.style.top = `${elmnt.offsetTop - pos2}px`;
     elmnt.style.left = `${elmnt.offsetLeft - pos1}px`;
     if (dragFrame) cancelAnimationFrame(dragFrame);
-    dragFrame = requestAnimationFrame(() => {
-      drawThreads();
-    });
+    dragFrame = requestAnimationFrame(() => { drawThreads(); });
   }
   function closeDragElement() {
     document.onmouseup = null;
@@ -1121,27 +953,14 @@ function openFilePicker(type) {
   if (pickerApiLoaded && google.picker) {
     createPickerInstance();
   } else {
-    gapi.load("picker", {
-      callback: () => {
-        pickerApiLoaded = true;
-        createPickerInstance();
-      },
-    });
+    gapi.load("picker", { callback: () => { pickerApiLoaded = true; createPickerInstance(); } });
   }
 }
 function createPickerInstance() {
   let viewMode = google.picker.ViewId.DOCS;
-  if (currentTargetType === "sheet")
-    viewMode = google.picker.ViewId.SPREADSHEETS;
-  if (currentTargetType === "slide")
-    viewMode = google.picker.ViewId.PRESENTATIONS;
-  const picker = new google.picker.PickerBuilder()
-    .addView(viewMode)
-    .addView(new google.picker.DocsUploadView())
-    .setOAuthToken(accessToken)
-    .setDeveloperKey(DEVELOPER_KEY)
-    .setCallback(pickerCallback)
-    .build();
+  if (currentTargetType === "sheet") viewMode = google.picker.ViewId.SPREADSHEETS;
+  if (currentTargetType === "slide") viewMode = google.picker.ViewId.PRESENTATIONS;
+  const picker = new google.picker.PickerBuilder().addView(viewMode).addView(new google.picker.DocsUploadView()).setOAuthToken(accessToken).setDeveloperKey(DEVELOPER_KEY).setCallback(pickerCallback).build();
   picker.setVisible(true);
 }
 function pickerCallback(data) {
@@ -1165,8 +984,7 @@ function closeEditModal() {
   saveCurrentWorkspace("Finished Editing");
 }
 function openPresentation(fileId) {
-  document.getElementById("presentation-frame").src =
-    `https://docs.google.com/presentation/d/${fileId}/embed?start=true&loop=false&delayms=3000`;
+  document.getElementById("presentation-frame").src = `https://docs.google.com/presentation/d/${fileId}/embed?start=true&loop=false&delayms=3000`;
   const modal = document.getElementById("presentation-modal");
   modal.style.display = "flex";
   if (modal.requestFullscreen) {
@@ -1203,14 +1021,9 @@ function spawnCloudNode(type, fileId, fileName) {
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom - 140}px`;
   const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
   let editUrl = `https://docs.google.com/document/d/${fileId}/edit`;
-  if (type === "sheet")
-    editUrl = `https://docs.google.com/spreadsheets/d/${fileId}/edit`;
-  if (type === "slide")
-    editUrl = `https://docs.google.com/presentation/d/${fileId}/edit`;
-  const presentBtn =
-    type === "slide"
-      ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">📽️</button>`
-      : "";
+  if (type === "sheet") editUrl = `https://docs.google.com/spreadsheets/d/${fileId}/edit`;
+  if (type === "slide") editUrl = `https://docs.google.com/presentation/d/${fileId}/edit`;
+  const presentBtn = type === "slide" ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">📽️</button>` : "";
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${fileName}</span>
@@ -1242,38 +1055,26 @@ async function askGemini() {
   const chat = document.getElementById("gemini-chat");
   const query = input.value.trim();
   if (!query) return;
-  chat.insertAdjacentHTML(
-    "beforeend",
-    `<div class="chat-message user-message">${query}</div>`,
-  );
+  chat.insertAdjacentHTML("beforeend", `<div class="chat-message user-message">${query}</div>`);
   input.value = "";
   chat.scrollTop = chat.scrollHeight;
   const loadingId = "msg-" + Date.now();
   chat.insertAdjacentHTML(
     "beforeend",
-    `<div id="${loadingId}" class="chat-message ai-message"><div style="display:flex; align-items:center; gap:8px;"><div class="google-spinner" style="width:16px; height:16px;"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg></div><span id="ai-status-text">Initializing in-browser AI engine...</span></div></div>`,
+    `<div id="${loadingId}" class="chat-message ai-message"><div style="display:flex; align-items:center; gap:8px;"><div class="google-spinner" style="width:16px; height:16px;"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg></div><span id="ai-status-text">Initializing in-browser AI engine...</span></div></div>`
   );
   chat.scrollTop = chat.scrollHeight;
   try {
-    let workspaceContext =
-      "You are the Orbit Spatial Assistant. Use this context to answer the user query accurately.\n\n";
+    let workspaceContext = "You are the Orbit Spatial Assistant. Use this context to answer the user query accurately.\n\n";
     const nodes = document.querySelectorAll(".orbit-node");
     if (nodes.length > 0) {
       for (let node of nodes) {
         const title = node.getAttribute("data-title");
         const fileId = node.getAttribute("data-file-id");
         const type = node.getAttribute("data-type");
-        if (
-          fileId &&
-          fileId !== "null" &&
-          fileId !== "undefined" &&
-          accessToken
-        ) {
+        if (fileId && fileId !== "null" && fileId !== "undefined" && accessToken) {
           try {
-            let response = await gapi.client.drive.files.export({
-              fileId: fileId,
-              mimeType: type === "sheet" ? "text/csv" : "text/plain",
-            });
+            let response = await gapi.client.drive.files.export({ fileId: fileId, mimeType: type === "sheet" ? "text/csv" : "text/plain" });
             workspaceContext += `--- Document: ${title} ---\n${response.body.substring(0, 500)}\n\n`;
           } catch (err) {
             workspaceContext += `--- Document: ${title} ---\n[Content Protected]\n\n`;
@@ -1286,25 +1087,18 @@ async function askGemini() {
       statusLabel.innerText = "Downloading AI architecture dependencies...";
       const webllm = await import("https://esm.run/@mlc-ai/web-llm");
       aiEngine = await webllm.CreateMLCEngine(selectedModel, {
-        initProgressCallback: (report) => {
-          statusLabel.innerText = `Caching weights: ${Math.round(report.progress * 100)}%`;
-        },
+        initProgressCallback: (report) => { statusLabel.innerText = `Caching weights: ${Math.round(report.progress * 100)}%`; },
       });
     }
     document.getElementById("ai-status-text").innerText = "Thinking...";
-    const messages = [
-      { role: "system", content: workspaceContext },
-      { role: "user", content: query },
-    ];
+    const messages = [ { role: "system", content: workspaceContext }, { role: "user", content: query } ];
     const reply = await aiEngine.chat.completions.create({ messages });
     const aiResponse = reply.choices[0].message.content;
-    document.getElementById(loadingId).innerHTML = aiResponse
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n/g, "<br>");
+    document.getElementById(loadingId).innerHTML = aiResponse.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+    saveCurrentWorkspace("Updated AI Discussion Log");
   } catch (error) {
     console.error(error);
-    document.getElementById(loadingId).innerHTML =
-      `<div style="color:var(--google-red); line-height: 1.6;"><b>In-Browser AI Initialization Failed</b><br>Ensure your browser supports WebGPU (Chrome/Edge 113+) or check your console logs.</div>`;
+    document.getElementById(loadingId).innerHTML = `<div style="color:var(--google-red); line-height: 1.6;"><b>In-Browser AI Initialization Failed</b><br>Ensure your browser supports WebGPU (Chrome/Edge 113+) or check your console logs.</div>`;
   }
   chat.scrollTop = chat.scrollHeight;
 }
@@ -1315,12 +1109,9 @@ function signOut() {
       document.getElementById("google-signin-btn").style.display = "block";
       document.getElementById("google-signout-btn").style.display = "none";
       document.getElementById("profile-avatar").style.display = "none";
-      document.getElementById("calendar-feed").innerHTML =
-        '<div style="padding:20px; text-align:center;">Sign in to view upcoming events...</div>';
+      document.getElementById("calendar-feed").innerHTML = '<div style="padding:20px; text-align:center;">Sign in to view upcoming events...</div>';
       const df = document.getElementById("drive-feed");
-      if (df)
-        df.innerHTML =
-          '<div style="padding:20px; text-align:center;">Sign in to view files...</div>';
+      if(df) df.innerHTML = '<div style="padding:20px; text-align:center;">Sign in to view files...</div>';
       triggerToast("Signed out safely.");
     });
   }
@@ -1334,16 +1125,12 @@ function initializeGoogleIdentity() {
   gapi.load("client", async () => {
     await gapi.client.init({
       apiKey: DEVELOPER_KEY,
-      discoveryDocs: [
-        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-        "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
-      ],
+      discoveryDocs: [ "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest", "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest" ],
     });
   });
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
-    scope:
-      "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.readonly",
+    scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.readonly",
     prompt: "consent",
     callback: (tokenResponse) => {
       if (tokenResponse && tokenResponse.access_token) {
@@ -1353,14 +1140,15 @@ function initializeGoogleIdentity() {
         document.getElementById("google-signout-btn").style.display = "block";
         document.getElementById("profile-avatar").style.display = "flex";
         fetchCalendarEvents();
-        if (document.getElementById("home-screen").style.display === "block") {
-          fetchHomeDriveFiles();
-        }
+        if (document.getElementById("home-screen").style.display === "block") { fetchHomeDriveFiles(); }
         triggerToast("Signed in successfully!");
         setTimeout(() => {
-          if (activeWorkspaceId)
-            saveCurrentWorkspace("Saved Before New Session");
-          createNewWorkspace();
+          if (!activeWorkspaceId) {
+            createNewWorkspace();
+          } else {
+            loadWorkspace(activeWorkspaceId);
+          }
+          launchTutorialSequence();
         }, 1000);
       }
     },
@@ -1369,10 +1157,7 @@ function initializeGoogleIdentity() {
   if (loginTarget) {
     loginTarget.onclick = (e) => {
       e.preventDefault();
-      if (!tokenClient) {
-        triggerToast("Google Auth blocked: Check your Client ID and API Keys.");
-        return;
-      }
+      if (!tokenClient) { triggerToast("Google Auth blocked: Check your Client ID and API Keys."); return; }
       tokenClient.requestAccessToken();
     };
   }
