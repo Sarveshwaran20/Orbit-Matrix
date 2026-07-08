@@ -1361,7 +1361,6 @@ function initializeGoogleIdentity() {
           if (activeWorkspaceId)
             saveCurrentWorkspace("Saved Before New Session");
           createNewWorkspace();
-          launchTutorialSequence();
         }, 1000);
       }
     },
