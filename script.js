@@ -1148,7 +1148,7 @@ function initializeGoogleIdentity() {
           } else {
             loadWorkspace(activeWorkspaceId);
           }
-          launchTutorialSequence();
+          
         }, 1000);
       }
     },
