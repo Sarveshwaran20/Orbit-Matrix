@@ -2,7 +2,11 @@
 
 Orbit is a spatial, infinite-canvas productivity workspace designed to map cloud resources out of traditional, nested folder structures and into interactive visual nodes. By pulling your Google Docs, Sheets, and Slides onto a unified coordinate playground, Orbit lets you connect data threads mathematically, visualize asset dependencies, and orchestrate complex projects in real-time.
 
-<video src="demo.mp4" width="100%" controls autoplay loop muted></video>
+
+
+https://github.com/user-attachments/assets/f0d11888-9b13-4195-ab0b-05214b2a4dd5
+
+
 
 ## ✨ Key Architectural Features
 
