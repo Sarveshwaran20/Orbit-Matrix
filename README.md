@@ -13,7 +13,7 @@ Orbit is a spatial, infinite-canvas productivity workspace designed to map cloud
 
 ### 🧠 Privacy-First Local AI Context Layer
 - **Deep Sidebar Context Tracking:** An embedded assistant designed to read, compile, and summarize text variables explicitly across active document nodes.
-- **Ollama Loopback Interface:** Directly queries local inference ports running `llama3` locally on your machine.
+- **Ollama Loopback Interface:** In-Browser WebGPU Inference: Directly executes the hyper-optimized Llama-3.2-1B model entirely within your browser using Web-LLM—no external API calls or local background servers required.
 - **Zero-Cloud Isolation Safeguard:** Your private enterprise data strings reside entirely inside browser memory limits during context mapping—no data ever leaks out onto external cloud infrastructure.
 
 ### ⏳ Linear Temporal Timeline Scrubber
