@@ -64,10 +64,6 @@ Decentralized Credentials: To avoid token leakage, this app operates entirely se
 Origin Locking: Keep your active credentials locked specifically down to your unique GitHub Pages address path via your console provider settings.
 
 🐛 Known Bugs & Future Fixes
-1. Browser Mixed Content & CORS Blocking (Local AI Panel)
-Issue: When running the application over production domains (https://), modern web browsers enforce strict Mixed Content Restrictions. This causes the browser to block background requests sent to an unencrypted local endpoint (http://127.0.0.1:11434).
+Most of the known bugs have been fixed.Switched to Web based LLM Llama-3.2-1B so now the browser does not block http requests since it is built within the browser.
 
-Current Workaround: 1. Set the environment variable OLLAMA_ORIGINS="*" on your machine to allow cross-origin requests.
-2. Click the lock/settings icon next to the URL bar on the hosted site, open Site Settings, and change Insecure Content to Allow.
-
-Planned Fix: Implement a lightweight secure websocket relay or proxy middleware layer to upgrade local HTTP transport payloads safely to encrypted protocols without manual browser exceptions.
+### It would be great if the google Dev community can test this out since I had mostly focused on building this to support Google's existing features like docs, sheets & slides.
