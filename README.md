@@ -69,4 +69,6 @@ But the AI is a bit of cranky as it was not designed for the website and was a c
 
 ### It would be great if the google Dev community can test this out since I had mostly focused on building this to support Google's existing features like docs, sheets & slides.
 
+### Before trying to test the website please ensure that you have an google developer key from Google Auth Platform under the Google cloud---(https://console.cloud.google.com/auth)
+
 
