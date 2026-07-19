@@ -121,7 +121,6 @@
     <div id="focus-backdrop" onclick="closeAllFocus()"></div>
     <div id="share-backdrop" onclick="closeShareModal()"></div>
     <div id="palette-backdrop" onclick="closeCommandPalette()"></div>
-    <div id="tutorial-overlay" style="display: none"></div>
     <div id="toast-notification">Notification</div>
 
     <div id="command-palette">
@@ -163,31 +162,6 @@
         <div class="palette-item" onclick="goToHome()">
           <span>🏠</span> Go to Dashboard Home
         </div>
-      </div>
-    </div>
-
-    <div id="tutorial-box" style="display: none">
-      <div class="tutorial-header">
-        <span id="tutorial-step-title">Welcome</span>
-        <button class="tutorial-close" onclick="skipTutorial()">✕</button>
-      </div>
-      <div id="tutorial-step-text" class="tutorial-body"></div>
-      <div class="tutorial-footer">
-        <button
-          class="secondary-btn"
-          style="padding: 4px 12px; font-size: 12px"
-          onclick="skipTutorial()"
-        >
-          Skip
-        </button>
-        <button
-          id="tutorial-next-btn"
-          class="primary-btn"
-          style="padding: 4px 16px; font-size: 12px"
-          onclick="nextTutorialStep()"
-        >
-          Next →
-        </button>
       </div>
     </div>
 
@@ -758,18 +732,23 @@
             ✕ Exit
           </button>
         </div>
-        <iframe
-          id="slideshow-frame"
-          src=""
+        <div
+          id="slideshow-frame-wrapper"
           style="
             width: 85%;
             height: 85%;
-            border: none;
             border-radius: 12px;
-            background: white;
+            overflow: hidden;
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            background: white;
           "
-        ></iframe>
+        >
+          <iframe
+            id="slideshow-frame"
+            src=""
+            style="width: 100%; height: 100%; border: none"
+          ></iframe>
+        </div>
       </div>
 
       <div
