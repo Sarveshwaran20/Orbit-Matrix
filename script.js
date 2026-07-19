@@ -1420,7 +1420,7 @@ async function askGemini() {
     const reply = await aiEngine.chat.completions.create({ messages });
     const aiResponse = reply.choices[0].message.content;
     document.getElementById(loadingId).innerHTML = aiResponse
-      .replace(/\*\*(.*?)\*\"/g, "<strong>$1</strong>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\n/g, "<br>");
   } catch (error) {
     console.error(error);
@@ -1445,17 +1445,13 @@ function signOut() {
   triggerToast("Signed out safely.");
 }
 
-/* --- Fixed Inline Authentication Delivery Mechanism --- */
 function handleCredentialResponse(response) {
   if (response && response.credential) {
-    // Standard access extraction from inline container payload
     accessToken = response.credential;
-
     document.getElementById("google-login-target").style.display = "none";
     document.getElementById("google-signout-btn").style.display = "block";
     document.getElementById("profile-avatar").style.display = "flex";
 
-    // Auto load contextual feeds safely
     setTimeout(() => {
       if (activeWorkspaceId) saveCurrentWorkspace("Saved Before New Session");
       createNewWorkspace();
@@ -1474,32 +1470,49 @@ function initializeGoogleIdentity() {
   }
 
   gapi.load("client", async () => {
-    await gapi.client.init({
-      apiKey: DEVELOPER_KEY,
-      discoveryDocs: [
-        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-        "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
-      ],
+    try {
+      await gapi.client.init({
+        apiKey: DEVELOPER_KEY,
+        discoveryDocs: [
+          "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+          "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
+        ],
+      });
+    } catch (e) {
+      console.warn(
+        "Google API Client failed initialization inside container structure.",
+        e,
+      );
+    }
+  });
+
+  // Strict Try-Catch protection wrapper to prevent preview container lockups
+  try {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse,
+      context: "signin",
+      ux_mode: "popup",
     });
-  });
 
-  // Render the identity button inline to completely prevent popup blocks
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-    context: "signin",
-    ux_mode: "popup",
-  });
+    const target = document.getElementById("google-login-target");
+    if (target) {
+      google.accounts.id.renderButton(target, {
+        theme: "outline",
+        size: "medium",
+      });
+      google.accounts.id.prompt();
+    }
+  } catch (crossOriginError) {
+    console.warn(
+      "COOP popup initialization intercepted safely. Running workspace fallback execution thread.",
+      crossOriginError,
+    );
 
-  google.accounts.id.renderButton(
-    document.getElementById("google-login-target"),
-    {
-      theme: "outline",
-      size: "medium",
-      type: "standard",
-      shape: "rectangular",
-    },
-  );
-
-  google.accounts.id.prompt();
+    // Safety Fallback Override: If Google is blocked, instantly bypass the block overlay!
+    setTimeout(() => {
+      createNewWorkspace();
+      launchTutorialSequence();
+    }, 800);
+  }
 }
