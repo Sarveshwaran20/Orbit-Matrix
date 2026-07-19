@@ -41,23 +41,19 @@ function checkDeveloperKeyRequirement() {
 
 function saveDeveloperKeyFromModal() {
   const inputVal = document.getElementById("modal-key-input").value.trim();
-
   if (!inputVal) {
     alert(
       "An API key is required to render and serve the interactive cloud workspace environment.",
     );
     return;
   }
-
   const googleKeyPattern = /^AIzaSy[A-Za-z0-9_-]{33}$/;
-
   if (!googleKeyPattern.test(inputVal)) {
     alert(
       "Invalid Key Format! A valid Google Cloud API Key must start with 'AIzaSy' and be exactly 39 characters long. Please check your key and try again.",
     );
     return;
   }
-
   DEVELOPER_KEY = inputVal;
   localStorage.setItem("orbit_dev_key", DEVELOPER_KEY);
   document.getElementById("key-setup-backdrop").style.display = "none";
@@ -141,7 +137,6 @@ function spawnBlankNode(type) {
   node.id = `node-${nodeIdCounter}`;
   node.setAttribute("data-title", title);
   node.setAttribute("data-type", type);
-  node.setAttribute("data-is-blank", "true");
   node.style.left = `${(-pan.x + window.innerWidth / 2) / zoom - 190}px`;
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom - 140}px`;
 
@@ -156,7 +151,7 @@ function spawnBlankNode(type) {
         <div class="node-header">
             <span class="header-title">${title}</span>
             <div class="header-actions">
-                <button class="action-btn" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')">🔗</button>
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')">🔗</button>
                 <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')">⛶</button>
                 <button class="action-btn edit-action" onclick="event.stopPropagation(); openFilePicker('${type}')">✏️</button>
                 <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')">✕</button>
@@ -276,7 +271,6 @@ function renderTutorialStep() {
     boxEl.style.left = `${rect.left - 340}px`;
     boxEl.style.transform = "none";
   }
-
   document.getElementById("tutorial-next-btn").innerText =
     currentTutorialStep === tutorialSteps.length - 1 ? "Finish 🎉" : "Next →";
 }
@@ -354,7 +348,6 @@ function loadWorkspace(id) {
     projectThreads = ws.threads || [];
     stateHistory = ws.history || [];
     drawThreads();
-
     if (historySlider) {
       historySlider.max = stateHistory.length > 0 ? stateHistory.length - 1 : 0;
       historySlider.value = historySlider.max;
@@ -388,14 +381,12 @@ async function spawnBlankNodeDrive(type) {
     triggerToast("Please Sign in with Google first.");
     return;
   }
-
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
   let title =
     titleInput && titleInput.value.trim()
       ? titleInput.value.trim()
       : `Untitled ${type.toUpperCase()}`;
-
   triggerToast("Creating asset container matrix architecture...");
 
   let mimeType = "";
@@ -417,7 +408,6 @@ async function spawnBlankNodeDrive(type) {
         mimeType: mimeType,
       }),
     });
-
     if (!response.ok) throw new Error("API Error");
     const file = await response.json();
 
@@ -514,7 +504,6 @@ function renderHomeWorkspaces() {
 function saveCurrentWorkspace(actionName = "Workspace Updated") {
   if (!activeWorkspaceId || isScrubbing) return;
   drawThreads();
-
   let workspaces = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
   const nodes = Array.from(document.querySelectorAll(".orbit-node")).map(
     (node) => ({
@@ -524,13 +513,11 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
       top: node.style.top,
     }),
   );
-
   stateHistory.push({
     label: actionName,
     nodes: nodes,
     threads: [...projectThreads],
   });
-
   if (historySlider) {
     historySlider.max = stateHistory.length > 0 ? stateHistory.length - 1 : 0;
     historySlider.value = historySlider.max;
@@ -539,7 +526,6 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
     timeStatus.innerText = actionName;
     timeStatus.style.color = "var(--google-green)";
   }
-
   const wsIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
   const wsData = {
     id: activeWorkspaceId,
@@ -550,13 +536,11 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
     lastModified: Date.now(),
     isDeleted: false,
   };
-
   if (wsIndex > -1) {
     workspaces[wsIndex] = wsData;
   } else {
     workspaces.push(wsData);
   }
-
   localStorage.setItem("orbit_workspaces", JSON.stringify(workspaces));
   updateMinimap();
 }
@@ -567,7 +551,6 @@ if (historySlider) {
     const index = parseInt(e.target.value);
     const state = stateHistory[index];
     if (!state) return;
-
     timeStatus.innerText =
       state.label + (index === stateHistory.length - 1 ? " (Live)" : " (Past)");
     timeStatus.style.color =
@@ -575,7 +558,6 @@ if (historySlider) {
         ? "var(--google-green)"
         : "var(--google-blue)";
     projectThreads = [...state.threads];
-
     document.querySelectorAll(".orbit-node").forEach((n) => n.remove());
     state.nodes.forEach((nodeData) => {
       container.insertAdjacentHTML("beforeend", nodeData.html);
@@ -586,7 +568,6 @@ if (historySlider) {
         makeElementDraggable(n);
       }
     });
-
     drawThreads();
     updateMinimap();
   });
@@ -625,7 +606,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 500);
     }
   }, 1500);
-
   try {
     updateTransform();
     const urlParams = new URLSearchParams(window.location.search);
@@ -638,7 +618,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "Shared External Workspace";
       projectThreads = dataState.threads || [];
       document.querySelectorAll(".orbit-node").forEach((n) => n.remove());
-
       dataState.nodes.forEach((nodeData) => {
         container.insertAdjacentHTML("beforeend", nodeData.html);
         const n = document.getElementById(nodeData.id);
@@ -648,7 +627,6 @@ document.addEventListener("DOMContentLoaded", () => {
           makeElementDraggable(n);
         }
       });
-
       drawThreads();
       triggerToast("Magic Link layout restored!");
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -661,10 +639,19 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error(error);
     triggerToast("Corrupt data cleared.");
   }
-
   syncNodeIdCounter();
   checkDeveloperKeyRequirement();
   if (DEVELOPER_KEY) initializeGoogleIdentity();
+});
+
+container.addEventListener("click", (e) => {
+  const nodeElement = e.target.closest(".orbit-node");
+  if (!nodeElement || e.target.closest(".action-btn")) return;
+
+  if (linkSourceNode) {
+    e.stopPropagation();
+    completeThreading(nodeElement.id);
+  }
 });
 
 let activeMenu = null;
@@ -800,7 +787,6 @@ function openSidePanel(tabName) {
     title = "Drive";
     if (accessToken) fetchDriveFiles();
   }
-
   document.getElementById("ep-title").innerText = title;
   document.getElementById("expanded-side-panel").classList.add("open");
 }
@@ -882,12 +868,10 @@ async function fetchHomeDriveFiles() {
         '<div style="padding:20px; color:var(--text-secondary);">No recent files found.</div>';
       return;
     }
-
     slideFiles = response.result.files.filter(
       (f) =>
         f.mimeType.includes("presentation") || f.mimeType.startsWith("image/"),
     );
-
     response.result.files.slice(0, 12).forEach((file) => {
       let icon = "📄",
         type = "doc",
@@ -906,7 +890,6 @@ async function fetchHomeDriveFiles() {
         type = "slide";
         color = "var(--google-yellow)";
       }
-
       feed.innerHTML += `
             <div class="recent-card" onclick="openWorkspaceScreen(); spawnCloudNode('${type}', '${file.id}', '${file.name.replace(/'/g, "\\'")}')">
                 <span style="font-size:24px; color:${color};">${icon}</span>
@@ -1035,14 +1018,25 @@ function toggleLinkMode(nodeId) {
     document.getElementById(nodeId).classList.add("linking-active");
     document.getElementById("linking-status").style.display = "block";
   } else {
-    if (linkSourceNode !== nodeId) {
-      projectThreads.push({ from: linkSourceNode, to: nodeId });
-      drawThreads();
-      saveCurrentWorkspace("Linked Documents");
+    if (linkSourceNode === nodeId) {
+      document
+        .getElementById(linkSourceNode)
+        .classList.remove("linking-active");
+      document.getElementById("linking-status").style.display = "none";
+      linkSourceNode = null;
     }
+  }
+}
+
+function completeThreading(targetId) {
+  if (linkSourceNode && linkSourceNode !== targetId) {
+    projectThreads.push({ from: linkSourceNode, to: targetId });
     document.getElementById(linkSourceNode).classList.remove("linking-active");
     document.getElementById("linking-status").style.display = "none";
     linkSourceNode = null;
+    drawThreads();
+    saveCurrentWorkspace("Linked Documents Matrix");
+    triggerToast("Logic Thread Stitched!");
   }
 }
 
@@ -1162,7 +1156,8 @@ function makeElementDraggable(elmnt) {
     header.onmousedown = (e) => {
       if (
         e.target.closest(".action-btn") ||
-        elmnt.classList.contains("focused-node")
+        elmnt.classList.contains("focused-node") ||
+        linkSourceNode
       )
         return;
       document.body.classList.add("dragging-active");
@@ -1283,7 +1278,6 @@ function spawnCloudNode(type, fileId, fileName) {
   if (document.getElementById("workspace-screen").style.display === "none") {
     openWorkspaceScreen();
   }
-
   nodeIdCounter++;
   const node = document.createElement("div");
   node.className = `orbit-node ${type}-node`;
@@ -1310,7 +1304,7 @@ function spawnCloudNode(type, fileId, fileName) {
         <div class="node-header">
             <span class="header-title">${fileName}</span>
             <div class="header-actions">
-                <button class="action-btn" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')">🔗</button> 
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')">🔗</button> 
                 <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')">⛶</button> 
                 ${presentBtn}
                 <button class="action-btn edit-action" onclick="event.stopPropagation(); openEditModal('${editUrl}', '${fileName}')">✏️</button> 
@@ -1354,7 +1348,7 @@ async function askGemini() {
             <div style="display:flex; align-items:center; gap:8px;">
                 <div class="google-spinner" style="width:16px; height:16px;">
                     <svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg>
-                </div><span id="ai-status-text">Initializing in-browser AI engine...</span>
+                </div><span id="ai-status-text">Initializing in-browser AI engine... This may take a moment.</span>
             </div>
         </div>`,
   );
@@ -1364,13 +1358,11 @@ async function askGemini() {
     let workspaceContext =
       "You are the Orbit Spatial Assistant. Use this context to answer the user query accurately.\n\n";
     const nodes = document.querySelectorAll(".orbit-node");
-
     if (nodes.length > 0) {
       for (let node of nodes) {
         const title = node.getAttribute("data-title");
         const fileId = node.getAttribute("data-file-id");
         const type = node.getAttribute("data-type");
-
         if (
           fileId &&
           fileId !== "null" &&
@@ -1393,26 +1385,20 @@ async function askGemini() {
     if (!aiEngine) {
       const statusLabel = document.getElementById("ai-status-text");
       statusLabel.innerText = "Downloading AI architecture dependencies...";
-
       const webllm = await import("https://esm.run/@mlc-ai/web-llm");
-
       aiEngine = await webllm.CreateMLCEngine(selectedModel, {
         initProgressCallback: (report) => {
           statusLabel.innerText = `Caching weights: ${Math.round(report.progress * 100)}%`;
         },
       });
     }
-
     document.getElementById("ai-status-text").innerText = "Thinking...";
-
     const messages = [
       { role: "system", content: workspaceContext },
       { role: "user", content: query },
     ];
-
     const reply = await aiEngine.chat.completions.create({ messages });
     const aiResponse = reply.choices[0].message.content;
-
     document.getElementById(loadingId).innerHTML = aiResponse
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\n/g, "<br>");
@@ -1450,7 +1436,6 @@ function initializeGoogleIdentity() {
     setTimeout(initializeGoogleIdentity, 100);
     return;
   }
-
   gapi.load("client", async () => {
     await gapi.client.init({
       apiKey: DEVELOPER_KEY,
@@ -1460,7 +1445,6 @@ function initializeGoogleIdentity() {
       ],
     });
   });
-
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
     scope:
@@ -1470,18 +1454,15 @@ function initializeGoogleIdentity() {
       if (tokenResponse && tokenResponse.access_token) {
         accessToken = tokenResponse.access_token;
         gapi.client.setToken({ access_token: accessToken });
-
         document.getElementById("google-signin-btn").style.display = "none";
         document.getElementById("google-signout-btn").style.display = "block";
         document.getElementById("profile-avatar").style.display = "flex";
         document.getElementById("multiplayer-presence").style.display = "flex";
-
         fetchCalendarEvents();
         if (document.getElementById("home-screen").style.display === "block") {
           fetchHomeDriveFiles();
         }
         triggerToast("Signed in successfully!");
-
         setTimeout(() => {
           if (activeWorkspaceId)
             saveCurrentWorkspace("Saved Before New Session");
@@ -1491,7 +1472,6 @@ function initializeGoogleIdentity() {
       }
     },
   });
-
   const loginTarget = document.getElementById("google-signin-btn");
   if (loginTarget) {
     loginTarget.onclick = (e) => {

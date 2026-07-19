@@ -1263,3 +1263,23 @@ html {
   object-fit: cover;
   border-radius: 50%;
 }
+
+.legal-footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-bottom: 20px;
+  font-size: 12px;
+  color: #888;
+}
+
+.legal-footer a {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  margin: 0 5px;
+}
+
+.legal-footer a:hover {
+  color: #1a73e8;
+  text-decoration: underline;
+}

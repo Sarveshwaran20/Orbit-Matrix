@@ -2,11 +2,7 @@
 
 Orbit is a spatial, infinite-canvas productivity workspace designed to map cloud resources out of traditional, nested folder structures and into interactive visual nodes. By pulling your Google Docs, Sheets, and Slides onto a unified coordinate playground, Orbit lets you connect data threads mathematically, visualize asset dependencies, and orchestrate complex projects in real-time.
 
-
-
-https://github.com/user-attachments/assets/f0d11888-9b13-4195-ab0b-05214b2a4dd5
-
-
+---
 
 ## ✨ Key Architectural Features
 
@@ -17,7 +13,7 @@ https://github.com/user-attachments/assets/f0d11888-9b13-4195-ab0b-05214b2a4dd5
 
 ### 🧠 Privacy-First Local AI Context Layer
 - **Deep Sidebar Context Tracking:** An embedded assistant designed to read, compile, and summarize text variables explicitly across active document nodes.
-- **Ollama Loopback Interface:** In-Browser WebGPU Inference: Directly executes the hyper-optimized Llama-3.2-1B model entirely within your browser using Web-LLM—no external API calls or local background servers required.
+- **Ollama Loopback Interface:** Directly queries local inference ports running `llama3` locally on your machine.
 - **Zero-Cloud Isolation Safeguard:** Your private enterprise data strings reside entirely inside browser memory limits during context mapping—no data ever leaks out onto external cloud infrastructure.
 
 ### ⏳ Linear Temporal Timeline Scrubber
@@ -68,11 +64,10 @@ Decentralized Credentials: To avoid token leakage, this app operates entirely se
 Origin Locking: Keep your active credentials locked specifically down to your unique GitHub Pages address path via your console provider settings.
 
 🐛 Known Bugs & Future Fixes
-Most of the known bugs have been fixed.Switched to Web based LLM Llama-3.2-1B so now the browser does not block http requests since it is built within the browser.
-But the AI is a bit of cranky as it was not designed for the website and was a common model available in the web and also a bit slow than your normal AI.Beware!!
+1. Browser Mixed Content & CORS Blocking (Local AI Panel)
+Issue: When running the application over production domains (https://), modern web browsers enforce strict Mixed Content Restrictions. This causes the browser to block background requests sent to an unencrypted local endpoint (http://127.0.0.1:11434).
 
-### It would be great if the google Dev community can test this out since I had mostly focused on building this to support Google's existing features like docs, sheets & slides.
+Current Workaround: 1. Set the environment variable OLLAMA_ORIGINS="*" on your machine to allow cross-origin requests.
+2. Click the lock/settings icon next to the URL bar on the hosted site, open Site Settings, and change Insecure Content to Allow.
 
-### Before trying to test the website please ensure that you have an google developer key from Google Auth Platform under the Google cloud---(https://console.cloud.google.com/auth)
-
-
+Planned Fix: Implement a lightweight secure websocket relay or proxy middleware layer to upgrade local HTTP transport payloads safely to encrypted protocols without manual browser exceptions.

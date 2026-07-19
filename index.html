@@ -9,6 +9,26 @@
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <style>
+      /* --- Public Legal Footer --- */
+      .legal-footer {
+        text-align: center;
+        margin-top: 60px;
+        padding-bottom: 30px;
+        font-size: 13px;
+        color: var(--text-secondary, #aaaaaa);
+      }
+      .legal-footer a {
+        color: var(--text-secondary, #aaaaaa);
+        text-decoration: none;
+        transition: color 0.2s ease;
+        margin: 0 10px;
+      }
+      .legal-footer a:hover {
+        color: var(--google-blue, #8ab4f8);
+        text-decoration: underline;
+      }
+    </style>
     <script type="module">
       import * as webllm from "https://esm.run/@mlc-ai/web-llm";
       window.webllm = webllm;
@@ -474,6 +494,11 @@
             Sign in to view Drive files
           </div>
         </div>
+      </div>
+
+      <div class="legal-footer">
+        <a href="privacy.html" target="_blank">Privacy Policy</a> &bull;
+        <a href="terms.html" target="_blank">Terms of Service</a>
       </div>
     </div>
 
