@@ -12,6 +12,7 @@ const timeStatus = document.getElementById("time-status");
 let accessToken = null;
 let pickerApiLoaded = false;
 let projectThreads = [];
+let tokenClient = null;
 let activeWorkspaceId = null;
 let nodeIdCounter = 0;
 let currentTargetType = "";
@@ -23,6 +24,7 @@ let slideInterval = null;
 let slideIsPlaying = true;
 let aiEngine = null;
 let linkSourceNode = null;
+let tutorialWatchdogTimer = null; // Watchdog tracker hook
 const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 
 let pan = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -102,7 +104,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-/* --- Tutorial Engine Core --- */
+/* --- Tutorial Engine with 5-Second Watchdog Fallback --- */
 let currentTutorialStep = 0;
 const tutorialSteps = [
   {
@@ -133,6 +135,16 @@ function launchTutorialSequence() {
   overlay.style.display = "block";
   box.style.display = "flex";
   currentTutorialStep = 0;
+
+  // Fire 5-Second Safety Fail-Safe Watchdog
+  console.log("Tutorial launched. Watchdog initialized for 5000ms.");
+  tutorialWatchdogTimer = setTimeout(() => {
+    if (document.getElementById("tutorial-overlay").style.display === "block") {
+      console.warn("Watchdog boundary reached. Enforcing safety break loop.");
+      skipTutorial();
+    }
+  }, 5000);
+
   renderTutorialStep();
 }
 
@@ -141,6 +153,11 @@ function renderTutorialStep() {
     .querySelectorAll(".tut-highlight")
     .forEach((el) => el.classList.remove("tut-highlight"));
   const step = tutorialSteps[currentTutorialStep];
+  if (!step) {
+    skipTutorial();
+    return;
+  }
+
   const targetEl = document.getElementById(step.elementId);
   const boxEl = document.getElementById("tutorial-box");
   if (!boxEl) return;
@@ -190,6 +207,12 @@ window.nextTutorialStep = function () {
 };
 
 window.skipTutorial = function () {
+  // Clear the watchdog timer if skipped manually or automatically
+  if (tutorialWatchdogTimer) {
+    clearTimeout(tutorialWatchdogTimer);
+    tutorialWatchdogTimer = null;
+  }
+
   document
     .querySelectorAll(".tut-highlight")
     .forEach((el) => el.classList.remove("tut-highlight"));
@@ -1435,7 +1458,7 @@ async function askGemini() {
 
 function signOut() {
   accessToken = null;
-  document.getElementById("google-login-target").style.display = "block";
+  document.getElementById("google-signin-btn").style.display = "block";
   document.getElementById("google-signout-btn").style.display = "none";
   document.getElementById("profile-avatar").style.display = "none";
   document.getElementById("calendar-feed").innerHTML =
@@ -1445,30 +1468,12 @@ function signOut() {
   triggerToast("Signed out safely.");
 }
 
-function handleCredentialResponse(response) {
-  if (response && response.credential) {
-    accessToken = response.credential;
-    document.getElementById("google-login-target").style.display = "none";
-    document.getElementById("google-signout-btn").style.display = "block";
-    document.getElementById("profile-avatar").style.display = "flex";
-
-    setTimeout(() => {
-      if (activeWorkspaceId) saveCurrentWorkspace("Saved Before New Session");
-      createNewWorkspace();
-      launchTutorialSequence();
-    }, 1000);
-
-    triggerToast("Signed in successfully!");
-  }
-}
-
 function initializeGoogleIdentity() {
   if (!DEVELOPER_KEY) return;
   if (typeof google === "undefined" || typeof gapi === "undefined") {
     setTimeout(initializeGoogleIdentity, 100);
     return;
   }
-
   gapi.load("client", async () => {
     try {
       await gapi.client.init({
@@ -1485,34 +1490,58 @@ function initializeGoogleIdentity() {
       );
     }
   });
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope:
+      "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.readonly",
+    prompt: "consent",
+    callback: (tokenResponse) => {
+      if (tokenResponse && tokenResponse.access_token) {
+        accessToken = tokenResponse.access_token;
+        gapi.client.setToken({ access_token: accessToken });
+        document.getElementById("google-signin-btn").style.display = "none";
+        document.getElementById("google-signout-btn").style.display = "block";
+        document.getElementById("profile-avatar").style.display = "flex";
+        fetchCalendarEvents();
+        if (document.getElementById("home-screen").style.display === "block") {
+          fetchHomeDriveFiles();
+        }
+        triggerToast("Signed in successfully!");
+        setTimeout(() => {
+          if (activeWorkspaceId)
+            saveCurrentWorkspace("Saved Before New Session");
+          createNewWorkspace();
+          launchTutorialSequence();
+        }, 1000);
+      }
+    },
+  });
+  const loginTarget = document.getElementById("google-signin-btn");
+  if (loginTarget) {
+    loginTarget.onclick = (e) => {
+      e.preventDefault();
+      if (!tokenClient) {
+        triggerToast("Google Auth blocked: Check your Client ID and API Keys.");
+        return;
+      }
+      tokenClient.requestAccessToken();
+    };
+  }
 
-  // Strict Try-Catch protection wrapper to prevent preview container lockups
+  // Fallback override route triggers on direct workspace launch if window is in separate mode
   try {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
-      context: "signin",
-      ux_mode: "popup",
-    });
-
-    const target = document.getElementById("google-login-target");
-    if (target) {
-      google.accounts.id.renderButton(target, {
-        theme: "outline",
-        size: "medium",
-      });
-      google.accounts.id.prompt();
+    if (
+      document.getElementById("workspace-screen").style.display === "block" ||
+      window.location.href.includes("Orbit-Matrix")
+    ) {
+      setTimeout(() => {
+        if (!accessToken) {
+          console.log("Applying active bypass initialization thread.");
+          launchTutorialSequence();
+        }
+      }, 1200);
     }
-  } catch (crossOriginError) {
-    console.warn(
-      "COOP popup initialization intercepted safely. Running workspace fallback execution thread.",
-      crossOriginError,
-    );
-
-    // Safety Fallback Override: If Google is blocked, instantly bypass the block overlay!
-    setTimeout(() => {
-      createNewWorkspace();
-      launchTutorialSequence();
-    }, 800);
+  } catch (err) {
+    console.warn(err);
   }
 }
