@@ -121,7 +121,6 @@
     <div id="focus-backdrop" onclick="closeAllFocus()"></div>
     <div id="share-backdrop" onclick="closeShareModal()"></div>
     <div id="palette-backdrop" onclick="closeCommandPalette()"></div>
-    <div id="tutorial-overlay" style="display: none"></div>
     <div id="toast-notification">Notification</div>
 
     <div id="command-palette">
@@ -163,31 +162,6 @@
         <div class="palette-item" onclick="goToHome()">
           <span>🏠</span> Go to Dashboard Home
         </div>
-      </div>
-    </div>
-
-    <div id="tutorial-box" style="display: none">
-      <div class="tutorial-header">
-        <span id="tutorial-step-title">Welcome</span>
-        <button class="tutorial-close" onclick="skipTutorial()">✕</button>
-      </div>
-      <div id="tutorial-step-text" class="tutorial-body"></div>
-      <div class="tutorial-footer">
-        <button
-          class="secondary-btn"
-          style="padding: 4px 12px; font-size: 12px"
-          onclick="skipTutorial()"
-        >
-          Skip
-        </button>
-        <button
-          id="tutorial-next-btn"
-          class="primary-btn"
-          style="padding: 4px 16px; font-size: 12px"
-          onclick="nextTutorialStep()"
-        >
-          Next →
-        </button>
       </div>
     </div>
 
@@ -307,9 +281,7 @@
         <button class="gemini-trigger" id="tut-gemini" onclick="toggleGemini()">
           ✨ Orbit AI
         </button>
-        
-        <div id="google-login-target"></div>
-        
+        <button id="google-signin-btn" class="auth-btn">Sign in</button>
         <button
           id="google-signout-btn"
           class="auth-btn"
@@ -609,7 +581,7 @@
         <div id="gemini-chat">
           <div class="chat-message ai-message">
             Hello! I can analyze your canvas open documents locally using
-            Ollama.
+            WebLLM.
           </div>
         </div>
         <div class="gemini-input-area">

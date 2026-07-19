@@ -24,7 +24,6 @@ let slideInterval = null;
 let slideIsPlaying = true;
 let aiEngine = null;
 let linkSourceNode = null;
-let tutorialWatchdogTimer = null; // Watchdog tracker hook
 const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 
 let pan = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -103,125 +102,6 @@ document.addEventListener("click", (e) => {
     menu.style.display = "none";
   }
 });
-
-/* --- Tutorial Engine with 5-Second Watchdog Fallback --- */
-let currentTutorialStep = 0;
-const tutorialSteps = [
-  {
-    elementId: "tut-logo",
-    title: "Central Hub",
-    text: "Clicking the dynamic Orbit logo drops you out of the matrix canvas view and takes you back to your Dashboard home.",
-    position: "bottom",
-  },
-  {
-    elementId: "tut-sidebar",
-    title: "App Ecosystem",
-    text: "Access companion apps directly on your right panel files.",
-    position: "left",
-  },
-  {
-    elementId: "tut-gemini",
-    title: "Orbit AI",
-    text: "Trigger the local app assistant to automatically extract and read text components from open documents.",
-    position: "left",
-  },
-];
-
-function launchTutorialSequence() {
-  const overlay = document.getElementById("tutorial-overlay");
-  const box = document.getElementById("tutorial-box");
-  if (!overlay || !box) return;
-
-  overlay.style.display = "block";
-  box.style.display = "flex";
-  currentTutorialStep = 0;
-
-  // Fire 5-Second Safety Fail-Safe Watchdog
-  console.log("Tutorial launched. Watchdog initialized for 5000ms.");
-  tutorialWatchdogTimer = setTimeout(() => {
-    if (document.getElementById("tutorial-overlay").style.display === "block") {
-      console.warn("Watchdog boundary reached. Enforcing safety break loop.");
-      skipTutorial();
-    }
-  }, 5000);
-
-  renderTutorialStep();
-}
-
-function renderTutorialStep() {
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
-  const step = tutorialSteps[currentTutorialStep];
-  if (!step) {
-    skipTutorial();
-    return;
-  }
-
-  const targetEl = document.getElementById(step.elementId);
-  const boxEl = document.getElementById("tutorial-box");
-  if (!boxEl) return;
-
-  if (!targetEl) {
-    boxEl.style.top = "50%";
-    boxEl.style.left = "50%";
-    boxEl.style.transform = "translate(-50%, -50%)";
-    document.getElementById("tutorial-step-title").innerText = step.title;
-    document.getElementById("tutorial-step-text").innerHTML = step.text;
-    return;
-  }
-
-  targetEl.classList.add("tut-highlight");
-  const rect = targetEl.getBoundingClientRect();
-  document.getElementById("tutorial-step-title").innerText = step.title;
-  document.getElementById("tutorial-step-text").innerHTML = step.text;
-
-  if (step.position === "right") {
-    boxEl.style.top = `${rect.top}px`;
-    boxEl.style.left = `${rect.right + 20}px`;
-    boxEl.style.transform = "none";
-  } else if (step.position === "bottom") {
-    boxEl.style.top = `${rect.bottom + 20}px`;
-    boxEl.style.left = `${rect.left}px`;
-    boxEl.style.transform = "none";
-  } else {
-    boxEl.style.top = `${rect.top}px`;
-    boxEl.style.left = `${rect.left - 340}px`;
-    boxEl.style.transform = "none";
-  }
-
-  const nextBtn = document.getElementById("tutorial-next-btn");
-  if (nextBtn) {
-    nextBtn.innerText =
-      currentTutorialStep === tutorialSteps.length - 1 ? "Finish 🎉" : "Next →";
-  }
-}
-
-window.nextTutorialStep = function () {
-  if (currentTutorialStep < tutorialSteps.length - 1) {
-    currentTutorialStep++;
-    renderTutorialStep();
-  } else {
-    skipTutorial();
-  }
-};
-
-window.skipTutorial = function () {
-  // Clear the watchdog timer if skipped manually or automatically
-  if (tutorialWatchdogTimer) {
-    clearTimeout(tutorialWatchdogTimer);
-    tutorialWatchdogTimer = null;
-  }
-
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
-  const overlay = document.getElementById("tutorial-overlay");
-  const box = document.getElementById("tutorial-box");
-  if (overlay) overlay.style.display = "none";
-  if (box) box.style.display = "none";
-  triggerToast("Welcome aboard!");
-};
 
 function spawnBlankNode(type) {
   syncNodeIdCounter();
@@ -1468,6 +1348,22 @@ function signOut() {
   triggerToast("Signed out safely.");
 }
 
+function handleCredentialResponse(response) {
+  if (response && response.credential) {
+    accessToken = response.credential;
+    document.getElementById("google-signin-btn").style.display = "none";
+    document.getElementById("google-signout-btn").style.display = "block";
+    document.getElementById("profile-avatar").style.display = "flex";
+
+    setTimeout(() => {
+      if (activeWorkspaceId) saveCurrentWorkspace("Saved Before New Session");
+      createNewWorkspace();
+    }, 1000);
+
+    triggerToast("Signed in successfully!");
+  }
+}
+
 function initializeGoogleIdentity() {
   if (!DEVELOPER_KEY) return;
   if (typeof google === "undefined" || typeof gapi === "undefined") {
@@ -1511,7 +1407,6 @@ function initializeGoogleIdentity() {
           if (activeWorkspaceId)
             saveCurrentWorkspace("Saved Before New Session");
           createNewWorkspace();
-          launchTutorialSequence();
         }, 1000);
       }
     },
@@ -1528,19 +1423,14 @@ function initializeGoogleIdentity() {
     };
   }
 
-  // Fallback override route triggers on direct workspace launch if window is in separate mode
+  // Fallback override layout paths completely unlock the canvas layout immediately on bootstrap load!
   try {
-    if (
-      document.getElementById("workspace-screen").style.display === "block" ||
-      window.location.href.includes("Orbit-Matrix")
-    ) {
-      setTimeout(() => {
-        if (!accessToken) {
-          console.log("Applying active bypass initialization thread.");
-          launchTutorialSequence();
-        }
-      }, 1200);
-    }
+    setTimeout(() => {
+      if (!accessToken) {
+        console.log("Canvas initialization bypass forced cleanly.");
+        createNewWorkspace();
+      }
+    }, 800);
   } catch (err) {
     console.warn(err);
   }
