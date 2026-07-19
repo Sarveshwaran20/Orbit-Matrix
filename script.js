@@ -1,12 +1,14 @@
 const GOOGLE_CLIENT_ID =
   "303731717202-l9fues9ul9c1t8v0n5r7idtugui7cska.apps.googleusercontent.com";
 const DEVELOPER_KEY = "AIzaSyAbKvRR7LD7ToKy8KZjZYw9_296SEAB-uU";
+
 const viewport = document.getElementById("viewport");
 const container = document.getElementById("canvas-container");
 const svgLayer = document.getElementById("svg-layer");
 const audioTracker = document.getElementById("distance-tracker");
 const historySlider = document.getElementById("history-slider");
 const timeStatus = document.getElementById("time-status");
+
 let accessToken = null;
 let pickerApiLoaded = false;
 let projectThreads = [];
@@ -23,12 +25,22 @@ let slideIsPlaying = true;
 let aiEngine = null;
 let linkSourceNode = null;
 const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+
 let pan = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 let zoom = 0.85;
 let isDragging = false;
 let start = { x: 0, y: 0 };
 pan.x -= 5000 * zoom;
 pan.y -= 5050 * zoom;
+
+// Completely bypass the API key modal since we hardcoded it above
+function checkDeveloperKeyRequirement() {
+  const modal = document.getElementById("key-setup-backdrop");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
 function syncNodeIdCounter() {
   document.querySelectorAll(".orbit-node").forEach((n) => {
     const parts = n.id.split("-");
@@ -40,6 +52,7 @@ function syncNodeIdCounter() {
     }
   });
 }
+
 function updateTransform() {
   container.style.transform = `matrix(${zoom}, 0, 0, ${zoom}, ${pan.x}, ${pan.y})`;
   const centerX = (-pan.x + window.innerWidth / 2) / zoom;
@@ -52,6 +65,7 @@ function updateTransform() {
   }
   updateMinimap();
 }
+
 function recenterCanvas() {
   closeAllMenus();
   zoom = 0.85;
@@ -59,6 +73,7 @@ function recenterCanvas() {
   pan.y = window.innerHeight / 2 - 5050 * zoom;
   updateTransform();
 }
+
 function updateMinimap() {
   const radar = document.getElementById("minimap-nodes");
   const vw = document.getElementById("minimap-viewport");
@@ -73,6 +88,7 @@ function updateMinimap() {
     radar.innerHTML += `<div class="minimap-blip" style="left:${parseInt(n.style.left) * mapScale}px; top:${parseInt(n.style.top) * mapScale}px;"></div>`;
   });
 }
+
 function toggleCreationMenu(e) {
   e.stopPropagation();
   const menu = document.getElementById("creation-popover");
@@ -80,12 +96,14 @@ function toggleCreationMenu(e) {
     menu.style.display = menu.style.display === "flex" ? "none" : "flex";
   }
 }
+
 document.addEventListener("click", (e) => {
   const menu = document.getElementById("creation-popover");
   if (menu && !e.target.closest("#canvas-creation-hub")) {
     menu.style.display = "none";
   }
 });
+
 function spawnBlankNode(type) {
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
@@ -101,12 +119,14 @@ function spawnBlankNode(type) {
   node.setAttribute("data-type", type);
   node.style.left = `${(-pan.x + window.innerWidth / 2) / zoom - 190}px`;
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom - 140}px`;
+
   let txt =
     type === "sheet"
       ? "Empty data grid layout workspace. Connect a live cloud file schema matrix."
       : type === "slide"
         ? "Blank graphics slide frame template matrix."
         : "Click 'Edit' (✏️) to connect an enterprise cloud resource document asset.";
+
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${title}</span>
@@ -117,18 +137,18 @@ function spawnBlankNode(type) {
                 <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')">✕</button>
             </div>
         </div>
-        <div class="node-body" style="position:relative;">
-            <div class="link-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display:none; cursor:crosshair;"></div>
-            <p style="margin:0; font-size:13px; font-style:italic;">${txt}</p>
-        </div>
+        <div class="node-body"><p style="margin:0; font-size:13px; font-style:italic;">${txt}</p></div>
     `;
+
   container.appendChild(node);
   makeElementDraggable(node);
+
   if (titleInput) titleInput.value = "";
   const pop = document.getElementById("creation-popover");
   if (pop) pop.style.display = "none";
   saveCurrentWorkspace("Created Blank Node");
 }
+
 function deleteNode(id) {
   const node = document.getElementById(id);
   if (node) node.remove();
@@ -136,6 +156,7 @@ function deleteNode(id) {
   drawThreads();
   saveCurrentWorkspace("Deleted File");
 }
+
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "k") {
     e.preventDefault();
@@ -143,6 +164,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") closeCommandPalette();
 });
+
 function openCommandPalette() {
   closeAllMenus();
   document.getElementById("palette-backdrop").style.display = "block";
@@ -151,96 +173,19 @@ function openCommandPalette() {
   document.getElementById("palette-input").focus();
   filterPalette();
 }
+
 function closeCommandPalette() {
   document.getElementById("palette-backdrop").style.display = "none";
   document.getElementById("command-palette").style.display = "none";
 }
+
 function filterPalette() {
   const q = document.getElementById("palette-input").value.toLowerCase();
   document.querySelectorAll("#palette-results .palette-item").forEach((i) => {
     i.style.display = i.innerText.toLowerCase().includes(q) ? "flex" : "none";
   });
 }
-let currentTutorialStep = 0;
-const tutorialSteps = [
-  {
-    elementId: "tut-logo",
-    title: "Central Hub",
-    text: "Clicking the dynamic Orbit logo drops you out of the matrix canvas view and takes you back to your Dashboard home.",
-    position: "bottom",
-  },
-  {
-    elementId: "tut-sidebar",
-    title: "App Ecosystem",
-    text: "Access companion apps directly on your right panel.",
-    position: "left",
-  },
-  {
-    elementId: "tut-gemini",
-    title: "Orbit AI",
-    text: "Trigger the local app assistant to automatically extract and read text components from open documents.",
-    position: "left",
-  },
-];
-function launchTutorialSequence() {
-  if (localStorage.getItem("orbit_tutorial_completed") === "true") return;
-  document.getElementById("tutorial-overlay").style.display = "block";
-  document.getElementById("tutorial-box").style.display = "flex";
-  currentTutorialStep = 0;
-  renderTutorialStep();
-}
-function renderTutorialStep() {
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
-  const step = tutorialSteps[currentTutorialStep];
-  const targetEl = document.getElementById(step.elementId);
-  const boxEl = document.getElementById("tutorial-box");
-  if (!targetEl) {
-    boxEl.style.top = "50%";
-    boxEl.style.left = "50%";
-    boxEl.style.transform = "translate(-50%, -50%)";
-    document.getElementById("tutorial-step-title").innerText = step.title;
-    document.getElementById("tutorial-step-text").innerHTML = step.text;
-    return;
-  }
-  targetEl.classList.add("tut-highlight");
-  const rect = targetEl.getBoundingClientRect();
-  document.getElementById("tutorial-step-title").innerText = step.title;
-  document.getElementById("tutorial-step-text").innerHTML = step.text;
-  if (step.position === "right") {
-    boxEl.style.top = `${rect.top}px`;
-    boxEl.style.left = `${rect.right + 20}px`;
-    boxEl.style.transform = "none";
-  } else if (step.position === "bottom") {
-    boxEl.style.top = `${rect.bottom + 20}px`;
-    boxEl.style.left = `${rect.left}px`;
-    boxEl.style.transform = "none";
-  } else {
-    boxEl.style.top = `${rect.top}px`;
-    boxEl.style.left = `${rect.left - 340}px`;
-    boxEl.style.transform = "none";
-  }
-  document.getElementById("tutorial-next-btn").innerText =
-    currentTutorialStep === tutorialSteps.length - 1 ? "Finish 🎉" : "Next →";
-}
-function nextTutorialStep() {
-  if (currentTutorialStep < tutorialSteps.length - 1) {
-    currentTutorialStep++;
-    renderTutorialStep();
-  } else {
-    skipTutorial();
-  }
-}
-function skipTutorial() {
-  document
-    .querySelectorAll(".tut-highlight")
-    .forEach((el) => el.classList.remove("tut-highlight"));
-  document.getElementById("tutorial-overlay").style.display = "none";
-  document.getElementById("tutorial-box").style.display = "none";
-  localStorage.setItem("orbit_tutorial_completed", "true");
-  triggerToast("Welcome aboard!");
-}
+
 function goToHome() {
   closeAllMenus();
   saveCurrentWorkspace("Navigating Home");
@@ -253,6 +198,7 @@ function goToHome() {
     fetchHomeDriveFiles();
   }
 }
+
 function openWorkspaceScreen() {
   document.getElementById("home-screen").style.display = "none";
   document.getElementById("home-meta-area").style.display = "none";
@@ -260,6 +206,7 @@ function openWorkspaceScreen() {
   document.getElementById("doc-meta-area").style.display = "flex";
   recenterCanvas();
 }
+
 function createNewWorkspace() {
   closeAllMenus();
   activeWorkspaceId = "ws_" + Date.now();
@@ -268,13 +215,10 @@ function createNewWorkspace() {
   stateHistory = [];
   drawThreads();
   document.getElementById("workspace-title").value = "Untitled Workspace";
-  const chatFeed = document.getElementById("gemini-chat");
-  if (chatFeed) {
-    chatFeed.innerHTML = `<div class="chat-message ai-message">Hello! I can analyze your canvas open documents locally using Llama.</div>`;
-  }
   saveCurrentWorkspace("Blank Workspace Created");
   openWorkspaceScreen();
 }
+
 function loadWorkspace(id) {
   let workspaces = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
   let ws = workspaces.find((w) => w.id === id);
@@ -282,6 +226,7 @@ function loadWorkspace(id) {
     activeWorkspaceId = ws.id;
     document.getElementById("workspace-title").value = ws.title;
     document.querySelectorAll(".orbit-node").forEach((n) => n.remove());
+
     ws.nodes.forEach((nodeData) => {
       container.insertAdjacentHTML("beforeend", nodeData.html);
       const n = document.getElementById(nodeData.id);
@@ -291,17 +236,10 @@ function loadWorkspace(id) {
         makeElementDraggable(n);
       }
     });
+
     projectThreads = ws.threads || [];
     stateHistory = ws.history || [];
     drawThreads();
-    const chatFeed = document.getElementById("gemini-chat");
-    if (chatFeed) {
-      if (ws.chatHistoryHTML) {
-        chatFeed.innerHTML = ws.chatHistoryHTML;
-      } else {
-        chatFeed.innerHTML = `<div class="chat-message ai-message">Hello! I can analyze your canvas open documents locally using Llama.</div>`;
-      }
-    }
     if (historySlider) {
       historySlider.max = stateHistory.length > 0 ? stateHistory.length - 1 : 0;
       historySlider.value = historySlider.max;
@@ -309,6 +247,7 @@ function loadWorkspace(id) {
     openWorkspaceScreen();
   }
 }
+
 function switchHomeTab(tab) {
   document.getElementById("active-workspaces-view").style.display =
     tab === "workspaces" ? "block" : "none";
@@ -318,6 +257,7 @@ function switchHomeTab(tab) {
     tab === "bin" ? "block" : "none";
   renderHomeWorkspaces();
 }
+
 function trashWorkspace(e, id) {
   e.stopPropagation();
   let ws = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
@@ -327,6 +267,7 @@ function trashWorkspace(e, id) {
   renderHomeWorkspaces();
   triggerToast("Moved to Bin");
 }
+
 async function spawnBlankNodeDrive(type) {
   if (!accessToken) {
     triggerToast("Please Sign in with Google first.");
@@ -339,12 +280,14 @@ async function spawnBlankNodeDrive(type) {
       ? titleInput.value.trim()
       : `Untitled ${type.toUpperCase()}`;
   triggerToast("Creating asset container matrix architecture...");
+
   let mimeType = "";
   if (type === "doc") mimeType = "application/vnd.google-apps.document";
   else if (type === "sheet")
     mimeType = "application/vnd.google-apps.spreadsheet";
   else if (type === "slide")
     mimeType = "application/vnd.google-apps.presentation";
+
   try {
     const response = await fetch("https://www.googleapis.com/drive/v3/files", {
       method: "POST",
@@ -352,13 +295,18 @@ async function spawnBlankNodeDrive(type) {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: title, mimeType: mimeType }),
+      body: JSON.stringify({
+        name: title,
+        mimeType: mimeType,
+      }),
     });
     if (!response.ok) throw new Error("API Error");
     const file = await response.json();
+
     if (titleInput) titleInput.value = "";
     const pop = document.getElementById("creation-popover");
     if (pop) pop.style.display = "none";
+
     spawnCloudNode(type, file.id, title);
     triggerToast(`${title} created successfully!`);
   } catch (error) {
@@ -366,6 +314,7 @@ async function spawnBlankNodeDrive(type) {
     triggerToast("Failed to create file. Check console.");
   }
 }
+
 function restoreWorkspace(e, id) {
   e.stopPropagation();
   let ws = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
@@ -375,6 +324,7 @@ function restoreWorkspace(e, id) {
   renderHomeWorkspaces();
   triggerToast("Workspace Restored");
 }
+
 function permDeleteWorkspace(e, id) {
   e.stopPropagation();
   let ws = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
@@ -383,6 +333,7 @@ function permDeleteWorkspace(e, id) {
   renderHomeWorkspaces();
   triggerToast("Permanently Deleted");
 }
+
 function emptyBin() {
   let ws = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
   ws = ws.filter((x) => !x.isDeleted);
@@ -390,10 +341,12 @@ function emptyBin() {
   renderHomeWorkspaces();
   triggerToast("Bin Emptied");
 }
+
 function renderHomeWorkspaces() {
   const activeFeed = document.getElementById("local-workspaces-feed");
   const binFeed = document.getElementById("bin-feed");
   if (!activeFeed || !binFeed) return;
+
   let workspaces = JSON.parse(localStorage.getItem("orbit_workspaces") || "[]");
   let activeWs = workspaces
     .filter((w) => !w.isDeleted)
@@ -401,6 +354,7 @@ function renderHomeWorkspaces() {
   let binWs = workspaces
     .filter((w) => w.isDeleted)
     .sort((a, b) => b.lastModified - a.lastModified);
+
   if (activeWs.length === 0) {
     activeFeed.innerHTML =
       '<div style="padding:20px;color:var(--text-secondary);">No saved workspaces yet. Click Blank Matrix to start!</div>';
@@ -418,6 +372,7 @@ function renderHomeWorkspaces() {
             </div>`;
     });
   }
+
   if (binWs.length === 0) {
     binFeed.innerHTML =
       '<div style="padding:20px;color:var(--text-secondary);">Bin is empty.</div>';
@@ -437,6 +392,7 @@ function renderHomeWorkspaces() {
     });
   }
 }
+
 function saveCurrentWorkspace(actionName = "Workspace Updated") {
   if (!activeWorkspaceId || isScrubbing) return;
   drawThreads();
@@ -462,8 +418,6 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
     timeStatus.innerText = actionName;
     timeStatus.style.color = "var(--google-green)";
   }
-  const chatFeed = document.getElementById("gemini-chat");
-  const currentChatHTML = chatFeed ? chatFeed.innerHTML : "";
   const wsIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
   const wsData = {
     id: activeWorkspaceId,
@@ -471,7 +425,6 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
     nodes: nodes,
     threads: projectThreads,
     history: stateHistory,
-    chatHistoryHTML: currentChatHTML,
     lastModified: Date.now(),
     isDeleted: false,
   };
@@ -483,6 +436,7 @@ function saveCurrentWorkspace(actionName = "Workspace Updated") {
   localStorage.setItem("orbit_workspaces", JSON.stringify(workspaces));
   updateMinimap();
 }
+
 if (historySlider) {
   historySlider.addEventListener("input", (e) => {
     isScrubbing = true;
@@ -513,6 +467,7 @@ if (historySlider) {
     isScrubbing = false;
   });
 }
+
 function triggerUndo() {
   closeAllMenus();
   const v = parseInt(historySlider.value);
@@ -522,6 +477,7 @@ function triggerUndo() {
     triggerToast("Undo applied");
   }
 }
+
 function triggerRedo() {
   closeAllMenus();
   const v = parseInt(historySlider.value);
@@ -531,6 +487,7 @@ function triggerRedo() {
     triggerToast("Redo applied");
   }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     const loader = document.getElementById("global-loader");
@@ -575,16 +532,20 @@ document.addEventListener("DOMContentLoaded", () => {
     triggerToast("Corrupt data cleared.");
   }
   syncNodeIdCounter();
-  initializeGoogleIdentity();
+  checkDeveloperKeyRequirement();
+  if (DEVELOPER_KEY) initializeGoogleIdentity();
 });
+
 container.addEventListener("click", (e) => {
   const nodeElement = e.target.closest(".orbit-node");
   if (!nodeElement || e.target.closest(".action-btn")) return;
+
   if (linkSourceNode) {
     e.stopPropagation();
     completeThreading(nodeElement.id);
   }
 });
+
 let activeMenu = null;
 document.querySelectorAll(".google-menu-bar .menu-item").forEach((item) => {
   item.addEventListener("click", (e) => {
@@ -602,6 +563,7 @@ document.querySelectorAll(".google-menu-bar .menu-item").forEach((item) => {
     }
   });
 });
+
 function openMenu(menuId, element) {
   closeAllMenus();
   if (menuId) {
@@ -611,6 +573,7 @@ function openMenu(menuId, element) {
     if (target) target.style.display = "block";
   }
 }
+
 function closeAllMenus() {
   activeMenu = null;
   document
@@ -620,11 +583,13 @@ function closeAllMenus() {
     .querySelectorAll(".menu-item")
     .forEach((item) => item.classList.remove("active"));
 }
+
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".google-menu-bar")) {
     closeAllMenus();
   }
 });
+
 function triggerToast(message) {
   closeAllMenus();
   const toast = document.getElementById("toast-notification");
@@ -633,6 +598,7 @@ function triggerToast(message) {
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 3000);
 }
+
 function toggleFullscreen() {
   closeAllMenus();
   if (!document.fullscreenElement) {
@@ -645,18 +611,22 @@ function toggleFullscreen() {
     }
   }
 }
+
 function openShareModal() {
   closeAllMenus();
   document.getElementById("share-backdrop").style.display = "block";
   document.getElementById("share-modal").style.display = "block";
 }
+
 function closeShareModal() {
   document.getElementById("share-backdrop").style.display = "none";
   document.getElementById("share-modal").style.display = "none";
 }
+
 function copyShareLink() {
   mixLayoutSnapshot();
 }
+
 function mixLayoutSnapshot() {
   try {
     const activeNodesSnapshot = Array.from(
@@ -672,14 +642,16 @@ function mixLayoutSnapshot() {
         JSON.stringify({ nodes: activeNodesSnapshot, threads: projectThreads }),
       ),
     );
-    const baseShareUrl = window.location.href.split("?")[0];
-    navigator.clipboard.writeText(baseShareUrl + "?matrix=" + b64);
+    navigator.clipboard.writeText(
+      window.location.origin + window.location.pathname + "?matrix=" + b64,
+    );
     triggerToast("Magic Link copied!");
     closeShareModal();
   } catch (err) {
     triggerToast("Error compressing link.");
   }
 }
+
 function openSidePanel(tabName) {
   document
     .querySelectorAll(".side-tab")
@@ -689,6 +661,7 @@ function openSidePanel(tabName) {
     .querySelectorAll(".ep-content")
     .forEach((content) => (content.style.display = "none"));
   document.getElementById(`ep-${tabName}`).style.display = "block";
+
   let title = "Google Apps";
   if (tabName === "calendar") {
     title = "Calendar";
@@ -709,12 +682,14 @@ function openSidePanel(tabName) {
   document.getElementById("ep-title").innerText = title;
   document.getElementById("expanded-side-panel").classList.add("open");
 }
+
 function closeSidePanel() {
   document.getElementById("expanded-side-panel").classList.remove("open");
   document
     .querySelectorAll(".side-tab")
     .forEach((tab) => tab.classList.remove("active-tab"));
 }
+
 async function fetchCalendarEvents() {
   const feed = document.getElementById("calendar-feed");
   feed.innerHTML =
@@ -739,6 +714,7 @@ async function fetchCalendarEvents() {
     feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">Error loading Calendar.</div>`;
   }
 }
+
 async function fetchDriveFiles() {
   const feed = document.getElementById("drive-feed");
   feed.innerHTML =
@@ -766,6 +742,7 @@ async function fetchDriveFiles() {
     feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">Error loading Drive files.</div>`;
   }
 }
+
 async function fetchHomeDriveFiles() {
   const feed = document.getElementById("home-recent-feed");
   if (!feed) return;
@@ -815,6 +792,7 @@ async function fetchHomeDriveFiles() {
     feed.innerHTML = `<div style="padding:20px; color:var(--google-red);">Error loading Drive files.</div>`;
   }
 }
+
 function startSlideshow() {
   if (slideFiles.length === 0) {
     triggerToast("No visual files found for slideshow.");
@@ -829,17 +807,20 @@ function startSlideshow() {
     if (slideIsPlaying) nextSlide();
   }, 4000);
 }
+
 function closeSlideshow() {
   document.getElementById("slideshow-modal").style.display = "none";
   document.getElementById("slideshow-frame").src = "";
   clearInterval(slideInterval);
 }
+
 function showSlide() {
   if (currentSlide >= slideFiles.length) currentSlide = 0;
   if (currentSlide < 0) currentSlide = slideFiles.length - 1;
   document.getElementById("slideshow-frame").src =
     `https://drive.google.com/file/d/${slideFiles[currentSlide].id}/preview`;
 }
+
 function nextSlide() {
   currentSlide++;
   showSlide();
@@ -854,6 +835,7 @@ function toggleSlidePlay() {
     ? "Play"
     : "Pause";
 }
+
 function saveKeepNote() {
   const input = document.getElementById("keep-input");
   const text = input.value.trim();
@@ -881,6 +863,7 @@ function deleteKeepNote(index) {
   localStorage.setItem("orbit_notes", JSON.stringify(notes));
   renderKeepNotes();
 }
+
 function saveTask() {
   const input = document.getElementById("task-input");
   const text = input.value.trim();
@@ -920,14 +903,12 @@ function renderTasks() {
     feed.innerHTML += `<div class="task-item"><input type="checkbox" onchange="toggleTask(${i})" ${task.done ? "checked" : ""}><span style="flex-grow:1; font-size:14px; ${textStyle}">${task.text}</span><button class="task-delete" onclick="removeTask(${i})">✕</button></div>`;
   });
 }
+
 function toggleLinkMode(nodeId) {
   if (!linkSourceNode) {
     linkSourceNode = nodeId;
     document.getElementById(nodeId).classList.add("linking-active");
     document.getElementById("linking-status").style.display = "block";
-    document.querySelectorAll(".orbit-node .link-overlay").forEach((el) => {
-      el.style.display = "block";
-    });
   } else {
     if (linkSourceNode === nodeId) {
       document
@@ -935,28 +916,22 @@ function toggleLinkMode(nodeId) {
         .classList.remove("linking-active");
       document.getElementById("linking-status").style.display = "none";
       linkSourceNode = null;
-      document.querySelectorAll(".orbit-node .link-overlay").forEach((el) => {
-        el.style.display = "none";
-      });
-    } else {
-      completeThreading(nodeId);
     }
   }
 }
+
 function completeThreading(targetId) {
   if (linkSourceNode && linkSourceNode !== targetId) {
     projectThreads.push({ from: linkSourceNode, to: targetId });
     document.getElementById(linkSourceNode).classList.remove("linking-active");
     document.getElementById("linking-status").style.display = "none";
     linkSourceNode = null;
-    document.querySelectorAll(".orbit-node .link-overlay").forEach((el) => {
-      el.style.display = "none";
-    });
     drawThreads();
     saveCurrentWorkspace("Linked Documents Matrix");
     triggerToast("Logic Thread Stitched!");
   }
 }
+
 function drawThreads() {
   if (!svgLayer) return;
   while (svgLayer.children.length > projectThreads.length) {
@@ -989,6 +964,7 @@ function drawThreads() {
     }
   });
 }
+
 function toggleFocusMode(nodeId) {
   const node = document.getElementById(nodeId);
   if (!node) return;
@@ -1001,6 +977,7 @@ function toggleFocusMode(nodeId) {
     node.style.pointerEvents = "auto";
   }
 }
+
 function closeAllFocus() {
   document.getElementById("focus-backdrop").style.display = "none";
   document
@@ -1008,10 +985,10 @@ function closeAllFocus() {
     .forEach((n) => n.classList.remove("focused-node"));
   container.style.pointerEvents = "auto";
 }
+
 viewport.addEventListener("mousedown", (e) => {
   if (
     e.target.closest(".orbit-node") ||
-    e.target.closest("#tutorial-box") ||
     e.target.closest("#canvas-creation-hub") ||
     e.target.closest("#temporal-scrubber") ||
     e.target.tagName === "BUTTON" ||
@@ -1023,6 +1000,7 @@ viewport.addEventListener("mousedown", (e) => {
   isDragging = true;
   start = { x: e.clientX - pan.x, y: e.clientY - pan.y };
 });
+
 window.addEventListener("mousemove", (e) => {
   if (isDragging) {
     pan.x = e.clientX - start.x;
@@ -1030,9 +1008,11 @@ window.addEventListener("mousemove", (e) => {
     updateTransform();
   }
 });
+
 window.addEventListener("mouseup", () => {
   isDragging = false;
 });
+
 viewport.addEventListener(
   "wheel",
   (e) => {
@@ -1055,6 +1035,7 @@ viewport.addEventListener(
   },
   { passive: false },
 );
+
 function makeElementDraggable(elmnt) {
   let pos1 = 0,
     pos2 = 0,
@@ -1098,6 +1079,7 @@ function makeElementDraggable(elmnt) {
     saveCurrentWorkspace("Moved Document");
   }
 }
+
 function openFilePicker(type) {
   closeAllMenus();
   if (!accessToken) {
@@ -1116,6 +1098,7 @@ function openFilePicker(type) {
     });
   }
 }
+
 function createPickerInstance() {
   let viewMode = google.picker.ViewId.DOCS;
   if (currentTargetType === "sheet")
@@ -1131,12 +1114,14 @@ function createPickerInstance() {
     .build();
   picker.setVisible(true);
 }
+
 function pickerCallback(data) {
   if (data.action === google.picker.Action.PICKED) {
     spawnCloudNode(currentTargetType, data.docs[0].id, data.docs[0].name);
     triggerToast(`Mounted ${data.docs[0].name}`);
   }
 }
+
 function openEditModal(url, title) {
   if (!url || url.includes("undefined")) {
     triggerToast("Save file to cloud first before full editing");
@@ -1146,11 +1131,13 @@ function openEditModal(url, title) {
   document.getElementById("edit-frame").src = url;
   document.getElementById("edit-modal").style.display = "flex";
 }
+
 function closeEditModal() {
   document.getElementById("edit-frame").src = "";
   document.getElementById("edit-modal").style.display = "none";
   saveCurrentWorkspace("Finished Editing");
 }
+
 function openPresentation(fileId) {
   document.getElementById("presentation-frame").src =
     `https://docs.google.com/presentation/d/${fileId}/embed?start=true&loop=false&delayms=3000`;
@@ -1160,6 +1147,7 @@ function openPresentation(fileId) {
     modal.requestFullscreen().catch((err) => console.log(err));
   }
 }
+
 function closePresentation() {
   document.getElementById("presentation-frame").src = "";
   document.getElementById("presentation-modal").style.display = "none";
@@ -1167,6 +1155,7 @@ function closePresentation() {
     document.exitFullscreen();
   }
 }
+
 window.deleteNode = function (id) {
   const node = document.getElementById(id);
   if (node) node.remove();
@@ -1174,6 +1163,7 @@ window.deleteNode = function (id) {
   drawThreads();
   saveCurrentWorkspace("Deleted Block");
 };
+
 function spawnCloudNode(type, fileId, fileName) {
   syncNodeIdCounter();
   if (document.getElementById("workspace-screen").style.display === "none") {
@@ -1188,16 +1178,19 @@ function spawnCloudNode(type, fileId, fileName) {
   node.setAttribute("data-type", type);
   node.style.left = `${(-pan.x + window.innerWidth / 2) / zoom - 190}px`;
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom - 140}px`;
+
   const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
   let editUrl = `https://docs.google.com/document/d/${fileId}/edit`;
   if (type === "sheet")
     editUrl = `https://docs.google.com/spreadsheets/d/${fileId}/edit`;
   if (type === "slide")
     editUrl = `https://docs.google.com/presentation/d/${fileId}/edit`;
+
   const presentBtn =
     type === "slide"
       ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">📽️</button>`
       : "";
+
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${fileName}</span>
@@ -1209,38 +1202,49 @@ function spawnCloudNode(type, fileId, fileName) {
                 <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')">✕</button>
             </div>
         </div>
-        <div class="node-body" style="padding: 0; position:relative;">
-            <div class="link-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display:none; cursor:crosshair;"></div>
-            <iframe class="portal-frame" src="${previewUrl}"></iframe>
-        </div>`;
+        <div class="node-body" style="padding: 0;"><iframe class="portal-frame" src="${previewUrl}"></iframe></div>`;
+
   container.appendChild(node);
   makeElementDraggable(node);
   saveCurrentWorkspace(`Imported ${fileName}`);
 }
+
 async function toggleGemini() {
   closeAllMenus();
   document.getElementById("gemini-panel").classList.toggle("open");
 }
+
 function handleGeminiEnter(e) {
   if (e.key === "Enter") askGemini();
 }
+
 async function askGemini() {
   const input = document.getElementById("gemini-input");
   const chat = document.getElementById("gemini-chat");
   const query = input.value.trim();
   if (!query) return;
+
   chat.insertAdjacentHTML(
     "beforeend",
     `<div class="chat-message user-message">${query}</div>`,
   );
   input.value = "";
   chat.scrollTop = chat.scrollHeight;
+
   const loadingId = "msg-" + Date.now();
   chat.insertAdjacentHTML(
     "beforeend",
-    `<div id="${loadingId}" class="chat-message ai-message"><div style="display:flex; align-items:center; gap:8px;"><div class="google-spinner" style="width:16px; height:16px;"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg></div><span id="ai-status-text">Initializing in-browser AI engine...</span></div></div>`,
+    `
+        <div id="${loadingId}" class="chat-message ai-message">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="google-spinner" style="width:16px; height:16px;">
+                    <svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg>
+                </div><span id="ai-status-text">Initializing in-browser AI engine... This may take a moment.</span>
+            </div>
+        </div>`,
   );
   chat.scrollTop = chat.scrollHeight;
+
   try {
     let workspaceContext =
       "You are the Orbit Spatial Assistant. Use this context to answer the user query accurately.\n\n";
@@ -1268,6 +1272,7 @@ async function askGemini() {
         }
       }
     }
+
     if (!aiEngine) {
       const statusLabel = document.getElementById("ai-status-text");
       statusLabel.innerText = "Downloading AI architecture dependencies...";
@@ -1288,14 +1293,17 @@ async function askGemini() {
     document.getElementById(loadingId).innerHTML = aiResponse
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\n/g, "<br>");
-    saveCurrentWorkspace("Updated AI Discussion Log");
   } catch (error) {
     console.error(error);
-    document.getElementById(loadingId).innerHTML =
-      `<div style="color:var(--google-red); line-height: 1.6;"><b>In-Browser AI Initialization Failed</b><br>Ensure your browser supports WebGPU (Chrome/Edge 113+) or check your console logs.</div>`;
+    document.getElementById(loadingId).innerHTML = `
+            <div style="color:var(--google-red); line-height: 1.6;">
+                <b>In-Browser AI Initialization Failed</b><br>
+                Ensure your browser supports WebGPU (Chrome/Edge 113+) or check your console logs.
+            </div>`;
   }
   chat.scrollTop = chat.scrollHeight;
 }
+
 function signOut() {
   if (accessToken) {
     google.accounts.oauth2.revoke(accessToken, () => {
@@ -1303,17 +1311,18 @@ function signOut() {
       document.getElementById("google-signin-btn").style.display = "block";
       document.getElementById("google-signout-btn").style.display = "none";
       document.getElementById("profile-avatar").style.display = "none";
+      document.getElementById("multiplayer-presence").style.display = "none";
       document.getElementById("calendar-feed").innerHTML =
         '<div style="padding:20px; text-align:center;">Sign in to view upcoming events...</div>';
-      const df = document.getElementById("drive-feed");
-      if (df)
-        df.innerHTML =
-          '<div style="padding:20px; text-align:center;">Sign in to view files...</div>';
+      document.getElementById("drive-feed").innerHTML =
+        '<div style="padding:20px; text-align:center;">Sign in to view recent files...</div>';
       triggerToast("Signed out safely.");
     });
   }
 }
+
 function initializeGoogleIdentity() {
+  if (!DEVELOPER_KEY) return;
   if (typeof google === "undefined" || typeof gapi === "undefined") {
     setTimeout(initializeGoogleIdentity, 100);
     return;
@@ -1339,18 +1348,16 @@ function initializeGoogleIdentity() {
         document.getElementById("google-signin-btn").style.display = "none";
         document.getElementById("google-signout-btn").style.display = "block";
         document.getElementById("profile-avatar").style.display = "flex";
+        document.getElementById("multiplayer-presence").style.display = "flex";
         fetchCalendarEvents();
         if (document.getElementById("home-screen").style.display === "block") {
           fetchHomeDriveFiles();
         }
         triggerToast("Signed in successfully!");
         setTimeout(() => {
-          if (!activeWorkspaceId) {
-            createNewWorkspace();
-          } else {
-            loadWorkspace(activeWorkspaceId);
-          }
-          
+          if (activeWorkspaceId)
+            saveCurrentWorkspace("Saved Before New Session");
+          createNewWorkspace();
         }, 1000);
       }
     },
