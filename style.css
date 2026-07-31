@@ -1321,3 +1321,119 @@ body.mode-mobile .orbit-node,
 body.mode-tablet .orbit-node {
   touch-action: none;
 }
+:root {
+  --google-blue: #1a73e8;
+  --google-green: #34a853;
+  --google-yellow: #fbbc04;
+  --google-red: #ea4335;
+  --bg-color: #111111;
+  --surface-color: #1e1e1e;
+  --border-color: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+}
+
+.orbit-node {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media screen and (max-width: 768px) {
+  .google-menu-bar {
+    display: none !important;
+  }
+
+  /* Compact top navigation bar */
+  #top-nav-bar {
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+  }
+
+  .top-btn-label {
+    display: none !important;
+  }
+
+  #expanded-side-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 75vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
+    z-index: 100000 !important;
+    border-top: 1px solid var(--border-color, #333333);
+    background-color: var(--surface-color, #1e1e1e);
+  }
+
+  #expanded-side-panel::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 5px;
+    background-color: #555555;
+    border-radius: 10px;
+    margin: 8px auto 4px auto;
+  }
+
+  #canvas-creation-hub {
+    bottom: 20px !important;
+    left: 16px !important;
+  }
+
+  #temporal-scrubber {
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.9) !important;
+    width: 85% !important;
+  }
+}
+
+body.mode-mobile .google-menu-bar {
+  display: none !important;
+}
+
+body.mode-mobile #top-nav-bar {
+  padding: 8px 12px !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+}
+
+body.mode-mobile .top-btn-label {
+  display: none !important;
+}
+
+body.mode-mobile #expanded-side-panel {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 75vh !important;
+  border-radius: 20px 20px 0 0 !important;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
+  z-index: 100000 !important;
+  border-top: 1px solid var(--border-color, #333333);
+  background-color: var(--surface-color, #1e1e1e);
+}
+
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  #expanded-side-panel {
+    width: 360px !important;
+    max-width: 70vw !important;
+  }
+}
+
+body.mode-tablet #expanded-side-panel {
+  width: 360px !important;
+  max-width: 70vw !important;
+}

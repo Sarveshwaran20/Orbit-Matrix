@@ -2001,21 +2001,24 @@ function selectDeviceMode(mode) {
   const backdrop = document.getElementById("device-mode-backdrop");
   if (backdrop) backdrop.style.display = "none";
 
+  // Clean up existing mode classes
   document.body.classList.remove("mode-mobile", "mode-tablet", "mode-desktop");
   document.body.classList.add(`mode-${mode}`);
 
+  // Automatically calibrate initial zoom scale for the device screen
   if (mode === "mobile") {
-    zoom = 0.52;
+    zoom = 0.48; // Compact scale so cards fit phone viewports comfortably
   } else if (mode === "tablet") {
     zoom = 0.68;
   } else {
-    zoom = 0.85;
+    zoom = 0.85; // Standard desktop scale
   }
 
+  // Recenter the virtual canvas around the new zoom scale
   pan.x = window.innerWidth / 2 - 5000 * zoom;
   pan.y = window.innerHeight / 2 - 5050 * zoom;
   updateTransform();
 
-  triggerToast(`Optimized for ${mode.toUpperCase()} layout!`);
+  triggerToast(`Optimized for ${mode.toUpperCase()} display!`);
 }
 window.selectDeviceMode = selectDeviceMode;
