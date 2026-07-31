@@ -1,0 +1,122 @@
+================================================================================
+                      ORBIT MATRIX - DEV JOURNAL                             
+                   Project Chronology, Bug Fixes & Major Updates                
+================================================================================
+
+[July 15, 2026] - Day 1: Project Genesis & UI/UX Shell Architecture
+--------------------------------------------------------------------------------
+* Kicked off Orbit Matrix! The vision: build an infinite 2D spatial workspace 
+  where developers and teams can visually organize Google Docs, Sheets, and Slides.
+* Designed the custom dark theme, glassmorphism modals, top navigation bar 
+  (File, Edit, View), and floating action buttons.
+* Structured the HTML5/CSS3 layout for draggable card nodes (.orbit-node) with 
+  distinct color accents for Docs (Blue), Sheets (Green), and Slides (Yellow).
+
+
+[July 18, 2026] - Infinite 2D Canvas Math & Multi-Touch Gestures
+--------------------------------------------------------------------------------
+* Implemented the core spatial canvas transform engine using CSS matrix transforms 
+  to support smooth panning and zooming across virtual coordinates.
+* Added mouse wheel zoom math and multi-touch pinch-to-zoom event listeners for 
+  trackpads and touchscreen devices.
+* Created the 'Recenter Canvas' function and distance tracker to reset viewport 
+  coordinates back to the origin (5000, 5050) instantly.
+
+
+[July 21, 2026] - SVG Logic Threading & Minimap Radar Blips
+--------------------------------------------------------------------------------
+* Built the SVG Bezier curve layer (#svg-layer) to draw dynamic dashed connection 
+  lines between linked document cards.
+* Implemented the Threading Tool (🔗) to connect cards and the Scissors / Unlink 
+  Tool (✂️) to slice existing connections.
+* Built the Minimap Radar viewport at the bottom left so users can see real-time 
+  blips of where their cards are scattered across the workspace.
+
+
+[July 23, 2026] - Google Drive Picker API & Timeline History Scrubber
+--------------------------------------------------------------------------------
+* Integrated Google Identity Services (OAuth 2.0 Token Client) and Google Drive 
+  Picker API so users can mount live Drive files directly into canvas cards.
+* Added the Google Calendar and Drive Recent Files side taskbar feeds.
+* Built the Timeline History Scrubber with full Undo/Redo tracking so every card 
+  move, creation, or deletion is saved in state history.
+
+
+[July 25, 2026] - Beta Testing Core Mechanics & Layout Stability
+--------------------------------------------------------------------------------
+* Refined card drag-and-drop physics (makeElementDraggable) to ensure card headers 
+  move smoothly without lagging or selecting text.
+* Added the Share Modal with Base64 URL state compression ("Magic Links") so users 
+  can share interactive snapshots of their canvas layout.
+
+
+[July 28, 2026] - Battling OAuth & Google AI Studio Key Mismatches
+--------------------------------------------------------------------------------
+* Ran into persistent HTTP 401 Unauthorized crashes whenever trying to connect 
+  the AI chat assistant to Google AI Studio.
+* Spent hours debugging and discovered Google AI Studio switched default project 
+  keys to Cloud IAM Auth Keys ("AQ..."), which require a full server-to-server 
+  OAuth bearer token flow instead of classic simple query strings ("?key=AIzaSy...").
+* Tried routing requests through a Flask backend on PythonAnywhere, but ran into 
+  CORS preflight headaches and 500 server errors. Decided to step back and rethink 
+  the AI architecture so the app doesn't rely on fragile external server pipes.
+
+
+[July 30, 2026] - The Zero-Server Pivot & Native Command Engine
+--------------------------------------------------------------------------------
+* Completely ditched the PythonAnywhere backend—decided to make Orbit Matrix 100% 
+  client-side and browser-native!
+* Built a custom local Workspace Command Engine right inside script.js that parses 
+  natural language keywords from the chat box to control the canvas:
+  - "analyze page" / "analyze canvas": Summarizes total active cards and threads.
+  - "analyze files": Inspects connected Google Drive file schemas.
+  - "add doc [Name]": Spawns a new Document card on the canvas.
+  - "add sheet [Name]": Spawns a new Spreadsheet card.
+  - "add slide [Name]": Spawns a new Presentation Deck card.
+  - "remove files" / "clear canvas": Clears all workspace cards and threads.
+* This made the app lightning fast and completely immune to external API outages!
+
+
+[July 31, 2026 - Morning] - Bringing in Local WebLLM (Llama-3.2-1B)
+--------------------------------------------------------------------------------
+* Wanted real AI text generation without requiring an API key, so I integrated 
+  in-browser WebGPU AI using WebLLM (Llama-3.2-1B-Instruct-q4f16_1-MLC).
+  Which quickly Backfired....
+* Built an interactive AI Mode Selector card in the Orbit AI sidebar so users can 
+  choose their preferred engine at the start of a session:
+  - WebLLM Engine (In-browser WebGPU AI model generation)
+  - Workspace Command Engine (Fast native canvas commands)
+* Removed the last remnants of external Gemini API keys from the script header.
+
+
+[July 31, 2026 - Afternoon] - Slaying the Menu Collapse Bug & Restoring Tools
+--------------------------------------------------------------------------------
+* Hit a nasty bug where clicking top menu items (File, Edit, View) or sidebar 
+  taskbar icons (Calendar, Drive, Keep, Tasks) caused dropdowns to flash open and 
+  instantly collapse.
+* Found the root cause: event-bubbling collisions! Clicking a menu button bubbled 
+  up to document.onclick, which immediately closed open menus within 1 millisecond.
+* Fixed it by adding explicit event.stopPropagation() protection and binding all 
+  UI handlers to window (window.openMenu, window.openSidePanel, etc.).
+* Restored the Scissors unlinking tool (✂️) and Threading tool (🔗) across card 
+  headers so users can stitch and cut SVG logic lines between cards again.
+* Fixed makeElementDraggable() so cards move smoothly on both mouse and touch 
+  devices without freezing button clicks.
+* Restored the Share Modal and compressed base64 Magic Link snapshot sharing.
+
+
+[July 31, 2026 - Late Afternoon] - Tester Feedback: Guest Mode & Offline Editors
+--------------------------------------------------------------------------------
+* Got frequent feedback from hackclub testers that they were afraid to log in with 
+  their Google account before knowing what the app does.
+* Added a "Try Guest Demo" button right next to Google Sign-In so anyone can jump 
+  straight into a demo workspace with zero OAuth authentication required!
+* Upgraded spawnBlankNode() so creating cards in Guest Mode generates real, 
+  interactive offline editors inside the card body:
+  - DOC Cards: Editable contenteditable document page for drafting text.
+  - SHEET Cards: Interactive HTML table grid with editable cells.
+  - SLIDE Cards: Editable presentation slide deck template with bullet points.
+* Added a "tutorial" / "help" / "onboarding" command to the AI chat box so users 
+  can re-spawn the 3 Onboarding Guide Cards onto their canvas anytime they need help.
+  ----THAT IS ALL FOR NOW-----
+================================================================================
