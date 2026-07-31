@@ -50,6 +50,7 @@ html {
   font-family: inherit;
   font-size: 14px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .global-input:focus {
