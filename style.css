@@ -963,6 +963,9 @@ html {
   transition: box-shadow 0.2s;
   will-change: top, left, transform;
   z-index: 2;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .orbit-node:hover {
@@ -1284,137 +1287,58 @@ html {
   text-decoration: underline;
 }
 
-body.mode-mobile .google-menu-bar {
-  display: none;
-}
-
-body.mode-mobile #top-nav-bar {
-  padding: 6px 10px;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-body.mode-mobile .top-btn-label {
-  display: none;
-}
-
-body.mode-mobile #expanded-side-panel {
-  position: fixed;
-  inset: 0;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 80vh;
-  top: auto;
-  bottom: 0;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
-  z-index: 100000;
-}
-
-body.mode-tablet #expanded-side-panel {
-  width: 340px !important;
-  max-width: 80vw;
-}
-
-body.mode-mobile .orbit-node,
-body.mode-tablet .orbit-node {
-  touch-action: none;
-}
-:root {
-  --google-blue: #1a73e8;
-  --google-green: #34a853;
-  --google-yellow: #fbbc04;
-  --google-red: #ea4335;
-  --bg-color: #111111;
-  --surface-color: #1e1e1e;
-  --border-color: #333333;
-  --text-primary: #ffffff;
-  --text-secondary: #aaaaaa;
-}
-
-.orbit-node {
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 @media screen and (max-width: 768px) {
   .google-menu-bar {
     display: none !important;
   }
 
-  /* Compact top navigation bar */
-  #top-nav-bar {
-    padding: 8px 12px !important;
-    gap: 8px !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-  }
-
-  .top-btn-label {
-    display: none !important;
-  }
-
-  #expanded-side-panel {
-    position: fixed !important;
-    top: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 75vh !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
-    z-index: 100000 !important;
-    border-top: 1px solid var(--border-color, #333333);
-    background-color: var(--surface-color, #1e1e1e);
-  }
-
-  #expanded-side-panel::before {
-    content: "";
-    display: block;
-    width: 40px;
-    height: 5px;
-    background-color: #555555;
-    border-radius: 10px;
-    margin: 8px auto 4px auto;
-  }
-
-  #canvas-creation-hub {
-    bottom: 20px !important;
-    left: 16px !important;
-  }
-
-  #temporal-scrubber {
-    bottom: 20px !important;
-    left: 50% !important;
-    transform: translateX(-50%) scale(0.9) !important;
-    width: 85% !important;
-  }
-}
-
-/* --- MOBILE MODE (< 768px or body.mode-mobile) --- */
-@media screen and (max-width: 768px) {
-  /* Hide desktop menu dropdowns on mobile */
-  .google-menu-bar {
-    display: none !important;
-  }
-
-  /* Compact top navigation bar to prevent button wrapping */
-  #top-nav-bar {
-    padding: 8px 10px !important;
+  #top-nav-bar,
+  #orbit-header {
+    padding: 6px 10px !important;
     gap: 6px !important;
     flex-wrap: nowrap !important;
-    overflow-x: auto;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .top-btn-label {
-    display: none !important; /* Show icons only on phone screens */
+    display: none !important;
   }
 
-  /* Transform overlapping side panel into a Bottom-Sheet Drawer */
+  #side-panel,
+  .sidebar-icons,
+  #app-toolbar,
+  .side-toolbar {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 80px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: rgba(30, 30, 30, 0.95) !important;
+    padding: 8px 6px !important;
+    border-radius: 20px !important;
+    border: 1px solid #333 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6) !important;
+    z-index: 99990 !important;
+  }
+
+  #gemini-panel {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 75vh !important;
+    max-height: 75vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    z-index: 100000 !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
+  }
+
   #expanded-side-panel {
     position: fixed !important;
     top: auto !important;
@@ -1431,67 +1355,81 @@ body.mode-tablet .orbit-node {
     background-color: var(--surface-color, #1e1e1e);
   }
 
-  /* Visual handle on top of the bottom sheet */
-  #expanded-side-panel::before {
-    content: "";
-    display: block;
-    width: 40px;
-    height: 5px;
-    background-color: #555555;
-    border-radius: 10px;
-    margin: 8px auto 4px auto;
-  }
-
-  /* Reposition floating creation button and timeline scrubber */
   #canvas-creation-hub {
     bottom: 20px !important;
     left: 16px !important;
+    z-index: 99980 !important;
   }
 
   #temporal-scrubber {
     bottom: 20px !important;
     left: 50% !important;
     transform: translateX(-50%) scale(0.85) !important;
-    width: 85% !important;
+    width: 75% !important;
+    z-index: 99980 !important;
   }
 }
 
-/* --- EXPLICIT CLASS OVERRIDES FOR MODE SWITCHER --- */
+/* 2. EXPLICIT CLASS OVERRIDES FOR FORCED MOBILE MODE (.mode-mobile) */
 body.mode-mobile .google-menu-bar {
   display: none !important;
 }
-body.mode-mobile #top-nav-bar {
-  padding: 8px 10px !important;
+
+body.mode-mobile #top-nav-bar,
+body.mode-mobile #orbit-header {
+  padding: 6px 10px !important;
   gap: 6px !important;
   flex-wrap: nowrap !important;
-  overflow-x: auto;
+  overflow-x: auto !important;
 }
+
 body.mode-mobile .top-btn-label {
   display: none !important;
 }
-body.mode-mobile #expanded-side-panel {
+
+body.mode-mobile #side-panel,
+body.mode-mobile .sidebar-icons,
+body.mode-mobile #app-toolbar,
+body.mode-mobile .side-toolbar {
   position: fixed !important;
   top: auto !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
+  bottom: 80px !important;
+  right: 12px !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  background: rgba(30, 30, 30, 0.95) !important;
+  padding: 8px 6px !important;
+  border-radius: 20px !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6) !important;
+  z-index: 99990 !important;
+}
+
+body.mode-mobile #gemini-panel,
+body.mode-mobile #expanded-side-panel {
+  position: fixed !important;
+  inset: auto 0 0 0 !important;
   width: 100% !important;
   max-width: 100% !important;
   height: 75vh !important;
+  max-height: 75vh !important;
   border-radius: 20px 20px 0 0 !important;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
   z-index: 100000 !important;
-  border-top: 1px solid var(--border-color, #333333);
-  background-color: var(--surface-color, #1e1e1e);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
 }
 
-/* --- TABLET MODE (769px - 1024px or body.mode-tablet) --- */
+/* 3. TABLET MODE OVERRIDES */
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   #expanded-side-panel {
     width: 340px !important;
     max-width: 70vw !important;
   }
 }
+
 body.mode-tablet #expanded-side-panel {
   width: 340px !important;
   max-width: 70vw !important;

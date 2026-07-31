@@ -2022,3 +2022,23 @@ function selectDeviceMode(mode) {
   triggerToast(`Optimized for ${mode.toUpperCase()} display!`);
 }
 window.selectDeviceMode = selectDeviceMode;
+
+// --- AUTO-DETECT MOBILE / TABLET VIEWPORTS ON BOOTSTRAP ---
+window.addEventListener("DOMContentLoaded", () => {
+  const isMobile = window.innerWidth <= 768;
+  const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+
+  if (isMobile) {
+    document.body.classList.add("mode-mobile");
+    zoom = 0.48; // Compact scale so cards fit iPhone/Android screens
+    pan.x = window.innerWidth / 2 - 5000 * zoom;
+    pan.y = window.innerHeight / 2 - 5050 * zoom;
+    updateTransform();
+  } else if (isTablet) {
+    document.body.classList.add("mode-tablet");
+    zoom = 0.68;
+    pan.x = window.innerWidth / 2 - 5000 * zoom;
+    pan.y = window.innerHeight / 2 - 5050 * zoom;
+    updateTransform();
+  }
+});
