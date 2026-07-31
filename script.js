@@ -1993,3 +1993,29 @@ function initializeGoogleIdentity() {
     console.warn(err);
   }
 }
+
+let currentDeviceMode = "desktop";
+
+function selectDeviceMode(mode) {
+  currentDeviceMode = mode;
+  const backdrop = document.getElementById("device-mode-backdrop");
+  if (backdrop) backdrop.style.display = "none";
+
+  document.body.classList.remove("mode-mobile", "mode-tablet", "mode-desktop");
+  document.body.classList.add(`mode-${mode}`);
+
+  if (mode === "mobile") {
+    zoom = 0.52;
+  } else if (mode === "tablet") {
+    zoom = 0.68;
+  } else {
+    zoom = 0.85;
+  }
+
+  pan.x = window.innerWidth / 2 - 5000 * zoom;
+  pan.y = window.innerHeight / 2 - 5050 * zoom;
+  updateTransform();
+
+  triggerToast(`Optimized for ${mode.toUpperCase()} layout!`);
+}
+window.selectDeviceMode = selectDeviceMode;

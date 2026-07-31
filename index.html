@@ -37,6 +37,104 @@
     <script src="https://apis.google.com/js/api.js" async defer></script>
   </head>
   <body>
+    <div
+      id="device-mode-backdrop"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+      "
+    >
+      <div
+        style="
+          background: #1e1e1e;
+          border: 1px solid #333;
+          padding: 24px;
+          border-radius: 14px;
+          max-width: 360px;
+          width: 90%;
+          text-align: center;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        "
+      >
+        <h3 style="margin: 0 0 8px 0; color: #fff; font-size: 18px">
+          🌌 Select Workspace Layout
+        </h3>
+        <p
+          style="
+            margin: 0 0 18px 0;
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.5;
+          "
+        >
+          Choose your device type to optimize canvas scale and prevent menu
+          overlaps:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <button
+            onclick="selectDeviceMode('mobile')"
+            style="
+              padding: 12px;
+              background: #1a73e8;
+              color: #fff;
+              border: none;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            "
+          >
+            <span>Mobile Phone Mode</span>
+          </button>
+          <button
+            onclick="selectDeviceMode('tablet')"
+            style="
+              padding: 12px;
+              background: #2a2a2a;
+              color: #fff;
+              border: 1px solid #444;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            "
+          >
+            <span>Tablet Mode</span>
+          </button>
+          <button
+            onclick="selectDeviceMode('desktop')"
+            style="
+              padding: 12px;
+              background: #2a2a2a;
+              color: #fff;
+              border: 1px solid #444;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            "
+          >
+            <span>Desktop / Laptop Mode</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="global-loader">
       <div class="google-spinner">
         <svg viewBox="25 25 50 50">

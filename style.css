@@ -1283,3 +1283,41 @@ html {
   color: #1a73e8;
   text-decoration: underline;
 }
+
+body.mode-mobile .google-menu-bar {
+  display: none;
+}
+
+body.mode-mobile #top-nav-bar {
+  padding: 6px 10px;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+body.mode-mobile .top-btn-label {
+  display: none;
+}
+
+body.mode-mobile #expanded-side-panel {
+  position: fixed;
+  inset: 0;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 80vh;
+  top: auto;
+  bottom: 0;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
+  z-index: 100000;
+}
+
+body.mode-tablet #expanded-side-panel {
+  width: 340px !important;
+  max-width: 80vw;
+}
+
+body.mode-mobile .orbit-node,
+body.mode-tablet .orbit-node {
+  touch-action: none;
+}
