@@ -1395,21 +1395,80 @@ body.mode-tablet .orbit-node {
   }
 }
 
+/* --- MOBILE MODE (< 768px or body.mode-mobile) --- */
+@media screen and (max-width: 768px) {
+  /* Hide desktop menu dropdowns on mobile */
+  .google-menu-bar {
+    display: none !important;
+  }
+
+  /* Compact top navigation bar to prevent button wrapping */
+  #top-nav-bar {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+  }
+
+  .top-btn-label {
+    display: none !important; /* Show icons only on phone screens */
+  }
+
+  /* Transform overlapping side panel into a Bottom-Sheet Drawer */
+  #expanded-side-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 75vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
+    z-index: 100000 !important;
+    border-top: 1px solid var(--border-color, #333333);
+    background-color: var(--surface-color, #1e1e1e);
+  }
+
+  /* Visual handle on top of the bottom sheet */
+  #expanded-side-panel::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 5px;
+    background-color: #555555;
+    border-radius: 10px;
+    margin: 8px auto 4px auto;
+  }
+
+  /* Reposition floating creation button and timeline scrubber */
+  #canvas-creation-hub {
+    bottom: 20px !important;
+    left: 16px !important;
+  }
+
+  #temporal-scrubber {
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.85) !important;
+    width: 85% !important;
+  }
+}
+
+/* --- EXPLICIT CLASS OVERRIDES FOR MODE SWITCHER --- */
 body.mode-mobile .google-menu-bar {
   display: none !important;
 }
-
 body.mode-mobile #top-nav-bar {
-  padding: 8px 12px !important;
-  gap: 8px !important;
+  padding: 8px 10px !important;
+  gap: 6px !important;
   flex-wrap: nowrap !important;
   overflow-x: auto;
 }
-
 body.mode-mobile .top-btn-label {
   display: none !important;
 }
-
 body.mode-mobile #expanded-side-panel {
   position: fixed !important;
   top: auto !important;
@@ -1426,14 +1485,14 @@ body.mode-mobile #expanded-side-panel {
   background-color: var(--surface-color, #1e1e1e);
 }
 
+/* --- TABLET MODE (769px - 1024px or body.mode-tablet) --- */
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   #expanded-side-panel {
-    width: 360px !important;
+    width: 340px !important;
     max-width: 70vw !important;
   }
 }
-
 body.mode-tablet #expanded-side-panel {
-  width: 360px !important;
+  width: 340px !important;
   max-width: 70vw !important;
 }

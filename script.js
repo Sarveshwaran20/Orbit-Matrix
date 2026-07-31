@@ -2001,20 +2001,20 @@ function selectDeviceMode(mode) {
   const backdrop = document.getElementById("device-mode-backdrop");
   if (backdrop) backdrop.style.display = "none";
 
-  // Clean up existing mode classes
+  // Reset existing mode classes
   document.body.classList.remove("mode-mobile", "mode-tablet", "mode-desktop");
   document.body.classList.add(`mode-${mode}`);
 
-  // Automatically calibrate initial zoom scale for the device screen
+  // Auto-scale canvas zoom based on device viewport
   if (mode === "mobile") {
-    zoom = 0.48; // Compact scale so cards fit phone viewports comfortably
+    zoom = 0.48; // Scale down cards so they fit phone screens natively
   } else if (mode === "tablet") {
-    zoom = 0.68;
+    zoom = 0.68; // Medium scale for iPads / Android tablets
   } else {
     zoom = 0.85; // Standard desktop scale
   }
 
-  // Recenter the virtual canvas around the new zoom scale
+  // Recenter canvas coordinates cleanly
   pan.x = window.innerWidth / 2 - 5000 * zoom;
   pan.y = window.innerHeight / 2 - 5050 * zoom;
   updateTransform();
