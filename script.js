@@ -131,21 +131,31 @@ function enableGuestMode() {
     signinBtn.style.border = "1px solid #555";
   }
 
-  // Visually disable Cloud Import buttons in the popover
-  document.querySelectorAll(".popover-action[onclick*='openFilePicker']").forEach(btn => {
-    btn.style.opacity = "0.4";
-    btn.style.cursor = "not-allowed";
-    // Override the click to give a helpful tip
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      triggerToast("Cloud imports require Sign-in. Use 'Generate Blank Asset' below.");
-    };
-  });
+  // Visually disable Cloud Import buttons, but don't break the onclick event
+  document
+    .querySelectorAll(".popover-action[onclick*='openFilePicker']")
+    .forEach((btn) => {
+      btn.style.opacity = "0.4";
+      btn.style.cursor = "not-allowed";
+    });
 
   createNewWorkspace();
-  triggerToast("Guest Demo Mode Active. Testing locally without Google Sign-In.");
+  triggerToast(
+    "Guest Demo Mode Active. Testing locally without Google Sign-In.",
+  );
 }
 window.enableGuestMode = enableGuestMode;
+
+// Resets visual locks when a user actually signs in
+function resetGuestMode() {
+  isGuestMode = false;
+  document
+    .querySelectorAll(".popover-action[onclick*='openFilePicker']")
+    .forEach((btn) => {
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+    });
+}
 
 // --- INTERACTIVE OFFLINE CARD GENERATOR ---
 function spawnBlankNode(
@@ -1536,8 +1546,10 @@ function makeElementDraggable(elmnt) {
 
 function openFilePicker(type) {
   closeAllMenus();
-  if (!accessToken) {
-    triggerToast("Please Sign in with Google first.");
+  if (!accessToken || isGuestMode) {
+    triggerToast(
+      "Cloud imports require Sign-in. Use 'Generate Blank Asset' below.",
+    );
     return;
   }
   currentTargetType = type;
@@ -1921,6 +1933,7 @@ window.signOut = signOut;
 function handleCredentialResponse(response) {
   if (response && response.credential) {
     accessToken = response.credential;
+    resetGuestMode();
     document.getElementById("google-signin-btn").style.display = "none";
     document.getElementById("google-signout-btn").style.display = "block";
     document.getElementById("profile-avatar").style.display = "flex";
@@ -1965,6 +1978,7 @@ function initializeGoogleIdentity() {
     callback: (tokenResponse) => {
       if (tokenResponse && tokenResponse.access_token) {
         accessToken = tokenResponse.access_token;
+        resetGuestMode();
         gapi.client.setToken({ access_token: accessToken });
         document.getElementById("google-signin-btn").style.display = "none";
         document.getElementById("google-signout-btn").style.display = "block";
