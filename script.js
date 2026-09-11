@@ -131,10 +131,19 @@ function enableGuestMode() {
     signinBtn.style.border = "1px solid #555";
   }
 
+  // Visually disable Cloud Import buttons in the popover
+  document.querySelectorAll(".popover-action[onclick*='openFilePicker']").forEach(btn => {
+    btn.style.opacity = "0.4";
+    btn.style.cursor = "not-allowed";
+    // Override the click to give a helpful tip
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      triggerToast("Cloud imports require Sign-in. Use 'Generate Blank Asset' below.");
+    };
+  });
+
   createNewWorkspace();
-  triggerToast(
-    "🚀 Guest Demo Mode Active! Testing locally without Google Sign-In.",
-  );
+  triggerToast("Guest Demo Mode Active. Testing locally without Google Sign-In.");
 }
 window.enableGuestMode = enableGuestMode;
 
@@ -211,7 +220,7 @@ function spawnBlankNode(
     editorContent = `
       <div contenteditable="true" style="padding: 14px; min-height: 180px; font-size: 13px; line-height: 1.6; color: #e0e0e0; outline: none; background: #161616;" placeholder="Type your document content here...">
         <b>Offline Document Editor</b><br>
-        Start typing here to draft notes, ideas, or specifications. Click ✏️ in the header whenever you are ready to link a live Google Doc.
+        Start typing here to draft notes, ideas, or specifications. Click edit in the header whenever you are ready to link a live Google Doc.
       </div>`;
   }
 
@@ -219,11 +228,11 @@ function spawnBlankNode(
         <div class="node-header">
             <span class="header-title">${title}</span>
             <div class="header-actions">
-                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">🔗</button>
-                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">✂️</button>
-                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">⛶</button>
-                <button class="action-btn edit-action" onclick="event.stopPropagation(); openFilePicker('${type}')" title="Edit">✏️</button>
-                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">✕</button>
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">Link</button>
+                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">Cut</button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">Focus</button>
+                <button class="action-btn edit-action" onclick="event.stopPropagation(); openFilePicker('${type}')" title="Edit">Edit</button>
+                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">Del</button>
             </div>
         </div>
         <div class="node-body" style="padding: 0;">${editorContent}</div>
@@ -243,21 +252,21 @@ function spawnOnboardingCards() {
   spawnBlankNode(
     "doc",
     "1. Welcome & Navigation",
-    "• Pan Canvas: Click & drag anywhere on background.<br>• Zoom: Use mouse wheel or pinch gesture.<br>• Center View: Click 'Recenter Canvas' on top bar.",
+    "Pan Canvas: Click & drag anywhere on background.<br>Zoom: Use mouse wheel or pinch gesture.<br>Center View: Click 'Recenter Canvas' on top bar.",
     -400,
     -150,
   );
   spawnBlankNode(
     "sheet",
     "2. Adding Assets",
-    "• Click (+ Create) at bottom right to add Doc, Sheet, or Slide cards.<br>• Click ✏️ on card header to open Google Drive picker.",
+    "Click (+ Create) at bottom right to add Doc, Sheet, or Slide cards.<br>Click Edit on card header to open Google Drive picker.",
     0,
     -150,
   );
   spawnBlankNode(
     "slide",
     "3. Connecting & Cutting Threads",
-    "• Link Cards: Click 🔗 on Card A, then click Card B.<br>• Cut Links: Click ✂️ on Card A, then click Card B to disconnect.",
+    "Link Cards: Click Link on Card A, then click Card B.<br>Cut Links: Click Cut on Card A, then click Card B to disconnect.",
     400,
     -150,
   );
@@ -401,7 +410,7 @@ async function spawnBlankNodeDrive(type) {
   // Graceful Guest Mode fallback: create local editable card without Google Drive auth
   if (!accessToken || isGuestMode) {
     spawnBlankNode(type);
-    triggerToast(`Guest Mode: Created editable ${type.toUpperCase()} card!`);
+    triggerToast(`Guest Mode: Created editable ${type.toUpperCase()} card.`);
     return;
   }
   syncNodeIdCounter();
@@ -439,7 +448,7 @@ async function spawnBlankNodeDrive(type) {
     if (pop) pop.style.display = "none";
 
     spawnCloudNode(type, file.id, title);
-    triggerToast(`${title} created successfully!`);
+    triggerToast(`${title} created successfully.`);
   } catch (error) {
     console.error(error);
     triggerToast("Failed to create file. Check console.");
@@ -492,18 +501,18 @@ function renderHomeWorkspaces() {
 
   if (activeWs.length === 0) {
     activeFeed.innerHTML =
-      '<div style="padding:20px;color:var(--text-secondary);">No saved workspaces yet. Click Blank Matrix to start!</div>';
+      '<div style="padding:20px;color:var(--text-secondary);">No saved workspaces yet. Click Blank Matrix to start.</div>';
   } else {
     activeFeed.innerHTML = "";
     activeWs.forEach((ws) => {
       activeFeed.innerHTML += `
             <div class="recent-card" onclick="loadWorkspace('${ws.id}')">
-                <span style="font-size:24px;color:var(--google-blue);">🌌</span>
+                <span style="font-size:24px;color:var(--google-blue);">Matrix</span>
                 <div style="flex-grow:1;overflow:hidden;">
                     <div style="font-weight:500;font-size:14px;white-space:nowrap;text-overflow:ellipsis;">${ws.title}</div>
                     <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${new Date(ws.lastModified).toLocaleString()}</div>
                 </div>
-                <button onclick="trashWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">🗑️</button>
+                <button onclick="trashWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">Del</button>
             </div>`;
     });
   }
@@ -516,13 +525,13 @@ function renderHomeWorkspaces() {
     binWs.forEach((ws) => {
       binFeed.innerHTML += `
             <div class="recent-card" style="opacity:0.7;">
-                <span style="font-size:24px;color:var(--text-secondary);">🌌</span>
+                <span style="font-size:24px;color:var(--text-secondary);">Matrix</span>
                 <div style="flex-grow:1;overflow:hidden;">
                     <div style="font-weight:500;font-size:14px;white-space:nowrap;text-overflow:ellipsis;text-decoration:line-through;">${ws.title}</div>
                     <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${new Date(ws.lastModified).toLocaleString()}</div>
                 </div>
                 <button onclick="restoreWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-green);cursor:pointer;font-size:14px;margin-right:8px;">Restore</button>
-                <button onclick="permDeleteWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-red);cursor:pointer;font-size:16px;">✕</button>
+                <button onclick="permDeleteWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-red);cursor:pointer;font-size:16px;">Del</button>
             </div>`;
     });
   }
@@ -660,7 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
       drawThreads();
-      triggerToast("Magic Link layout restored!");
+      triggerToast("Magic Link layout restored.");
       window.history.replaceState({}, document.title, window.location.pathname);
       openWorkspaceScreen();
       saveCurrentWorkspace("Loaded Shared Link");
@@ -849,7 +858,7 @@ function mixLayoutSnapshot() {
     navigator.clipboard.writeText(
       window.location.origin + window.location.pathname + "?matrix=" + b64,
     );
-    triggerToast("Magic Link copied!");
+    triggerToast("Magic Link copied.");
     closeShareModal();
   } catch (err) {
     triggerToast("Error compressing link.");
@@ -878,6 +887,9 @@ function openSidePanel(tabName, event) {
   if (viewTarget) viewTarget.style.display = "block";
 
   let title = "Google Apps";
+  if (tabName === "tools") {
+    title = "Workspace Tools";
+  }
   if (tabName === "calendar") {
     title = "Calendar";
     if (accessToken) fetchCalendarEvents();
@@ -957,14 +969,14 @@ async function fetchDriveFiles() {
       orderBy: "viewedByMeTime desc",
     });
     response.result.files.forEach((file) => {
-      let icon = "📄",
+      let icon = "Doc",
         type = "doc";
       if (file.mimeType.includes("spreadsheet")) {
-        icon = "📊";
+        icon = "Sheet";
         type = "sheet";
       }
       if (file.mimeType.includes("presentation")) {
-        icon = "🖼️";
+        icon = "Slide";
         type = "slide";
       }
       feed.innerHTML += `<div class="ep-item" style="cursor:pointer;" onclick="spawnCloudNode('${type}', '${file.id}', '${file.name.replace(/'/g, "\\'")}')"><strong>${icon} Click to drop</strong> ${file.name}</div>`;
@@ -998,20 +1010,20 @@ async function fetchHomeDriveFiles() {
         f.mimeType.includes("presentation") || f.mimeType.startsWith("image/"),
     );
     response.result.files.slice(0, 12).forEach((file) => {
-      let icon = "📄",
+      let icon = "Doc",
         type = "doc",
         color = "var(--google-blue)";
       if (file.mimeType.includes("spreadsheet")) {
-        icon = "📊";
+        icon = "Sheet";
         type = "sheet";
         color = "var(--google-green)";
       }
       if (file.mimeType.includes("presentation")) {
-        icon = "🖼️";
+        icon = "Slide";
         type = "slide";
         color = "var(--google-yellow)";
       } else if (file.mimeType.startsWith("image/")) {
-        icon = "🖼️";
+        icon = "Img";
         type = "slide";
         color = "var(--google-yellow)";
       }
@@ -1209,7 +1221,7 @@ function completeThreading(targetId) {
     });
     drawThreads();
     saveCurrentWorkspace("Linked Documents Matrix");
-    triggerToast("Logic Thread Stitched!");
+    triggerToast("Logic Thread Stitched.");
   }
 }
 
@@ -1268,7 +1280,7 @@ function completeUnlinking(targetId) {
     drawThreads();
     if (projectThreads.length < prevCount) {
       saveCurrentWorkspace("Cut Thread Connection");
-      triggerToast("Logic Thread Cut ✂️");
+      triggerToast("Logic Thread Cut.");
     } else {
       triggerToast("No existing thread between these cards.");
     }
@@ -1627,19 +1639,19 @@ function spawnCloudNode(type, fileId, fileName) {
 
   const presentBtn =
     type === "slide"
-      ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">📽️</button>`
+      ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">Present</button>`
       : "";
 
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${fileName}</span>
             <div class="header-actions">
-                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">🔗</button> 
-                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">✂️</button>
-                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">⛶</button> 
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">Link</button> 
+                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">Cut</button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">Focus</button> 
                 ${presentBtn}
-                <button class="action-btn edit-action" onclick="event.stopPropagation(); openEditModal('${editUrl}', '${fileName}')" title="Edit">✏️</button> 
-                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">✕</button>
+                <button class="action-btn edit-action" onclick="event.stopPropagation(); openEditModal('${editUrl}', '${fileName}')" title="Edit">Edit</button> 
+                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">Del</button>
             </div>
         </div>
         <div class="node-body" style="padding: 0;"><iframe class="portal-frame" src="${previewUrl}"></iframe></div>`;
@@ -1661,16 +1673,16 @@ async function toggleGemini() {
   if (chat && (!llmPreferenceSet || chat.children.length <= 1)) {
     chat.innerHTML = `
       <div class="chat-message ai-message" id="llm-selector-card" style="background: #1e1e1e; border: 1px solid #333; padding: 12px; border-radius: 8px;">
-        <b>🤖 Select AI Assistant Mode:</b><br>
+        <b>Select AI Assistant Mode:</b><br>
         <p style="margin: 8px 0; font-size: 13px; color: #aaa;">
           Choose how Orbit AI should process your requests:
         </p>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
           <button onclick="setLLMPreference(true)" style="padding: 8px 12px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px;">
-            🚀 <b>WebLLM Engine</b> (In-Browser WebGPU AI)
+            <b>WebLLM Engine</b> (In-Browser WebGPU AI)
           </button>
           <button onclick="setLLMPreference(false)" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px;">
-            ⚡ <b>Workspace Command Engine</b> (Fast local canvas commands)
+            <b>Workspace Command Engine</b> (Fast local canvas commands)
           </button>
         </div>
       </div>
@@ -1780,7 +1792,7 @@ async function askGemini() {
         query.includes("onboarding")
       ) {
         spawnOnboardingCards();
-        responseMessage = `🎓 <b>Tutorial Cards Spawned!</b><br>I have placed the 3 onboarding guide cards onto your canvas matrix.`;
+        responseMessage = `<b>Tutorial Cards Spawned!</b><br>I have placed the 3 onboarding guide cards onto your canvas matrix.`;
       } else if (
         query.includes("analyze page") ||
         query.includes("analyze canvas")
@@ -1794,7 +1806,7 @@ async function askGemini() {
         });
 
         responseMessage = `
-          <b>📊 Page & Canvas Analysis Report:</b><br>
+          <b>Page & Canvas Analysis Report:</b><br>
           - Total Active Cards: <b>${nodes.length}</b><br>
           - Active Threads/Connections: <b>${projectThreads.length}</b><br><br>
           <b>Canvas Elements:</b><br>${summaries.join("<br>") || "No cards currently on workspace."}
@@ -1810,7 +1822,7 @@ async function askGemini() {
         });
 
         responseMessage = `
-          <b>📁 File Schema Inspection:</b><br>
+          <b>File Schema Inspection:</b><br>
           - Total Workspace Nodes: ${nodes.length}<br>
           - Linked Google Drive Cloud Assets: ${cloudFiles}<br>
           <i>All document schemas are synchronized with local workspace storage.</i>
@@ -1821,7 +1833,7 @@ async function askGemini() {
           .trim();
         const fileName = titleMatch || "New Spreadsheet Matrix";
         spawnBlankNode("sheet", fileName, "Data grid layout workspace.", 0, 0);
-        responseMessage = `📊 Successfully created and added new <b>Spreadsheet</b> card: <b>"${fileName}"</b>!`;
+        responseMessage = `Successfully created and added new <b>Spreadsheet</b> card: <b>"${fileName}"</b>.`;
       } else if (query.includes("add slide") || query.includes("spawn slide")) {
         const titleMatch = rawQuery
           .replace(/add slide|spawn slide/i, "")
@@ -1834,7 +1846,7 @@ async function askGemini() {
           0,
           0,
         );
-        responseMessage = `📽️ Successfully created and added new <b>Slide</b> card: <b>"${fileName}"</b>!`;
+        responseMessage = `Successfully created and added new <b>Slide</b> card: <b>"${fileName}"</b>.`;
       } else if (
         query.includes("add doc") ||
         query.includes("add file") ||
@@ -1853,7 +1865,7 @@ async function askGemini() {
           0,
           0,
         );
-        responseMessage = `📄 Successfully created and added new <b>Document</b> card: <b>"${fileName}"</b>!`;
+        responseMessage = `Successfully created and added new <b>Document</b> card: <b>"${fileName}"</b>.`;
       } else if (
         query.includes("remove files") ||
         query.includes("delete files") ||
@@ -1866,10 +1878,10 @@ async function askGemini() {
         drawThreads();
         saveCurrentWorkspace("Cleared Canvas via Command");
 
-        responseMessage = `🗑️ Successfully scrubbed and removed <b>${count}</b> resource files and layout threads from your canvas matrix.`;
+        responseMessage = `Successfully scrubbed and removed <b>${count}</b> resource files and layout threads from your canvas matrix.`;
       } else {
         responseMessage = `
-          <b>🤖 Orbit Command Matrix Active</b><br>
+          <b>Orbit Command Matrix Active</b><br>
           Try these commands:<br>
           • <code>tutorial</code> / <code>help</code><br>
           • <code>analyze page</code><br>
@@ -1882,7 +1894,7 @@ async function askGemini() {
     }
   } catch (err) {
     console.error(err);
-    responseMessage = `⚠️ Error executing command: ${err.message}`;
+    responseMessage = `Error executing command: ${err.message}`;
   }
 
   setTimeout(() => {
@@ -1961,7 +1973,7 @@ function initializeGoogleIdentity() {
         if (document.getElementById("home-screen").style.display === "block") {
           fetchHomeDriveFiles();
         }
-        triggerToast("Signed in successfully!");
+        triggerToast("Signed in successfully.");
         setTimeout(() => {
           if (activeWorkspaceId)
             saveCurrentWorkspace("Saved Before New Session");
@@ -2019,7 +2031,7 @@ function selectDeviceMode(mode) {
   pan.y = window.innerHeight / 2 - 5050 * zoom;
   updateTransform();
 
-  triggerToast(`Optimized for ${mode.toUpperCase()} display!`);
+  triggerToast(`Optimized for ${mode.toUpperCase()} display.`);
 }
 window.selectDeviceMode = selectDeviceMode;
 
@@ -2040,5 +2052,30 @@ window.addEventListener("DOMContentLoaded", () => {
     pan.x = window.innerWidth / 2 - 5000 * zoom;
     pan.y = window.innerHeight / 2 - 5050 * zoom;
     updateTransform();
+  }
+});
+
+// --- MOBILE NAVIGATION DROPDOWN TOGGLE ---
+function toggleMobileNavMenu(event) {
+  const e = event || window.event;
+  if (e && e.stopPropagation) e.stopPropagation();
+
+  const menu = document.getElementById("top-action-buttons");
+  if (menu) {
+    menu.classList.toggle("open");
+  }
+}
+window.toggleMobileNavMenu = toggleMobileNavMenu;
+
+// Ensure tapping outside closes the mobile nav menu
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("top-action-buttons");
+  if (menu && menu.classList.contains("open")) {
+    if (
+      !e.target.closest("#top-action-buttons") &&
+      !e.target.closest("#mobile-nav-toggle")
+    ) {
+      menu.classList.remove("open");
+    }
   }
 });
