@@ -14,7 +14,6 @@
       rel="stylesheet"
     />
     <style>
-      /* --- Public Legal Footer --- */
       .legal-footer {
         text-align: center;
         margin-top: 60px;
@@ -33,10 +32,6 @@
         text-decoration: underline;
       }
     </style>
-    <script type="module">
-      import * as webllm from "https://esm.run/@mlc-ai/web-llm";
-      window.webllm = webllm;
-    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
   </head>
@@ -97,7 +92,7 @@
               gap: 8px;
             "
           >
-            <span>Mobile Phone Mode</span>
+            <span>📱 Mobile Phone Mode</span>
           </button>
           <button
             onclick="selectDeviceMode('tablet')"
@@ -115,7 +110,7 @@
               gap: 8px;
             "
           >
-            <span>Tablet Mode</span>
+            <span>💻 Tablet Mode</span>
           </button>
           <button
             onclick="selectDeviceMode('desktop')"
@@ -133,7 +128,7 @@
               gap: 8px;
             "
           >
-            <span>Desktop / Laptop Mode</span>
+            <span>🖥️ Desktop / Laptop Mode</span>
           </button>
         </div>
       </div>
@@ -148,8 +143,229 @@
       <div
         style="margin-top: 16px; font-weight: 500; color: var(--text-secondary)"
       >
-        Syncing with Orbit Cloud...
+        ☁️ Syncing with Orbit Cloud...
       </div>
+    </div>
+
+    <!-- WORKSPACE PRESENTATION HIERARCHY MODAL -->
+    <div
+      id="workspace-presentation-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 100000;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #1e1e24;
+          border: 1px solid #3c4043;
+          border-radius: 16px;
+          padding: 24px 28px;
+          width: 90%;
+          max-width: 440px;
+          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+          color: #fff;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h3 style="margin: 0; font-size: 18px; color: #8ab4f8">
+            📽️ Presentation Hierarchy
+          </h3>
+          <button
+            onclick="closeWorkspacePresentationModal()"
+            style="
+              background: none;
+              border: none;
+              color: #aaa;
+              font-size: 18px;
+              cursor: pointer;
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <p
+          id="pres-counts-summary"
+          style="margin: 0; font-size: 12px; color: #aaa; line-height: 1.4"
+        >
+          Choose how Orbit Matrix should sequence your canvas presentation:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <button
+            onclick="startWorkspacePresentation('slides_first')"
+            style="
+              padding: 12px 14px;
+              background: #292a2d;
+              border: 1px solid #3c4043;
+              border-radius: 8px;
+              color: #fff;
+              text-align: left;
+              cursor: pointer;
+              transition: 0.2s;
+            "
+            onmouseover="this.style.borderColor = '#fdd663'"
+            onmouseout="this.style.borderColor = '#3c4043'"
+          >
+            <b>🖼️ Slides First ➔ 📄 Docs ➔ 📊 Sheets</b>
+            <div style="font-size: 11px; color: #aaa; margin-top: 2px">
+              Prioritizes visual pitch decks, followed by document briefs and
+              tables.
+            </div>
+          </button>
+
+          <button
+            onclick="startWorkspacePresentation('docs_first')"
+            style="
+              padding: 12px 14px;
+              background: #292a2d;
+              border: 1px solid #3c4043;
+              border-radius: 8px;
+              color: #fff;
+              text-align: left;
+              cursor: pointer;
+              transition: 0.2s;
+            "
+            onmouseover="this.style.borderColor = '#8ab4f8'"
+            onmouseout="this.style.borderColor = '#3c4043'"
+          >
+            <b>📄 Documents First ➔ 📊 Sheets ➔ 🖼️ Slides</b>
+            <div style="font-size: 11px; color: #aaa; margin-top: 2px">
+              Introduces core briefing texts and data metrics before
+              presentation visuals.
+            </div>
+          </button>
+
+          <button
+            onclick="startWorkspacePresentation('sheets_first')"
+            style="
+              padding: 12px 14px;
+              background: #292a2d;
+              border: 1px solid #3c4043;
+              border-radius: 8px;
+              color: #fff;
+              text-align: left;
+              cursor: pointer;
+              transition: 0.2s;
+            "
+            onmouseover="this.style.borderColor = '#81c995'"
+            onmouseout="this.style.borderColor = '#3c4043'"
+          >
+            <b>📊 Sheets First ➔ 📄 Docs ➔ 🖼️ Slides</b>
+            <div style="font-size: 11px; color: #aaa; margin-top: 2px">
+              Leads directly with data matrices, budgets, and operational
+              benchmarks.
+            </div>
+          </button>
+
+          <button
+            onclick="startWorkspacePresentation('canvas_order')"
+            style="
+              padding: 12px 14px;
+              background: #292a2d;
+              border: 1px solid #3c4043;
+              border-radius: 8px;
+              color: #fff;
+              text-align: left;
+              cursor: pointer;
+              transition: 0.2s;
+            "
+            onmouseover="this.style.borderColor = '#8ab4f8'"
+            onmouseout="this.style.borderColor = '#3c4043'"
+          >
+            <b>⏳ Creation Order (Default Sequence)</b>
+            <div style="font-size: 11px; color: #aaa; margin-top: 2px">
+              Walks through cards strictly in the order they were spawned on the
+              canvas.
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESENTATION WALKTHROUGH CONTROLLER HUD -->
+    <div
+      id="presentation-walkthrough-bar"
+      style="
+        display: none;
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(30, 30, 36, 0.95);
+        border: 1px solid #3c4043;
+        border-radius: 100px;
+        padding: 10px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        z-index: 99990;
+        align-items: center;
+        gap: 16px;
+        color: #fff;
+        backdrop-filter: blur(10px);
+      "
+    >
+      <button
+        onclick="prevPresentationNode()"
+        style="
+          background: #2a2a30;
+          border: 1px solid #555;
+          color: #fff;
+          padding: 6px 12px;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 12px;
+        "
+      >
+        ◀ Prev Card
+      </button>
+      <span
+        id="pres-step-indicator"
+        style="font-size: 13px; font-weight: 500; color: #8ab4f8"
+        >Card 1/1</span
+      >
+      <button
+        onclick="nextPresentationNode()"
+        style="
+          background: #1a73e8;
+          border: none;
+          color: #fff;
+          padding: 6px 14px;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: bold;
+        "
+      >
+        Next Card ▶
+      </button>
+      <button
+        onclick="exitWorkspacePresentation()"
+        style="
+          background: none;
+          border: none;
+          color: #f28b82;
+          cursor: pointer;
+          font-size: 12px;
+          margin-left: 8px;
+        "
+      >
+        ✕ Exit
+      </button>
     </div>
 
     <div
@@ -189,7 +405,7 @@
             color: var(--text-primary);
           "
         >
-          Initialize Orbit Matrix
+          🔑 Initialize Orbit Matrix
         </h2>
         <p
           style="
@@ -215,7 +431,7 @@
           class="primary-btn"
           style="width: 100%; padding: 10px"
         >
-          Save & Initialize Workspace
+          🚀 Save & Initialize Workspace
         </button>
       </div>
     </div>
@@ -286,7 +502,7 @@
             margin-left: 8px;
           "
         >
-          Orbit Home
+          🌌 Orbit Home
         </div>
 
         <div class="doc-meta-area" id="doc-meta-area" style="display: none">
@@ -298,7 +514,7 @@
               value="Untitled Workspace Matrix"
               onchange="
                 saveCurrentWorkspace();
-                triggerToast('Workspace renamed');
+                triggerToast('✏️ Workspace renamed');
               "
             />
             <span
@@ -306,7 +522,7 @@
               title="Star"
               onclick="
                 this.style.color = '#fbbc05';
-                triggerToast('Workspace starred');
+                triggerToast('⭐ Workspace starred');
               "
               >☆</span
             >
@@ -314,7 +530,7 @@
               class="doc-icons"
               style="font-size: 16px"
               title="Document status"
-              onclick="triggerToast('Saved locally')"
+              onclick="triggerToast('☁️ Saved locally')"
               >☁️</span
             >
           </div>
@@ -326,13 +542,9 @@
                   <span>🌌 New Workspace</span>
                 </div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" onclick="openFilePicker('doc')">
-                  <span>📂 Import File</span>
-                </div>
                 <div class="dropdown-item" onclick="openShareModal()">
-                  <span>👤 Share Magic Link</span>
+                  <span>🔗 Share Magic Link</span>
                 </div>
-                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" onclick="goToHome()">
                   <span>🏠 Back to Home</span>
                 </div>
@@ -363,9 +575,17 @@
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" onclick="toggleFullscreen()">
-                  <span>⛶ Full screen</span>
+                  <span>⛶ Fullscreen</span>
                 </div>
               </div>
+            </div>
+
+            <div
+              class="menu-item"
+              onclick="openWorkspacePresentationModal()"
+              style="color: #8ab4f8; font-weight: 500"
+            >
+              Present
             </div>
           </div>
         </div>
@@ -377,30 +597,54 @@
           id="linking-status"
           style="display: none; color: var(--google-blue); font-weight: 500"
         >
-          Select a document...
+          🔗 Select a document...
         </div>
-        <button class="share-btn" onclick="openShareModal()">🔒 Share</button>
-        <button class="gemini-trigger" id="tut-gemini" onclick="toggleGemini()">
-          ✨ Orbit AI
-        </button>
-        <button id="google-signin-btn" class="auth-btn">Sign in</button>
+
         <button
-          id="guest-mode-btn"
-          onclick="enableGuestMode()"
-          class="auth-btn"
+          id="mobile-nav-toggle"
+          onclick="toggleMobileNavMenu(event)"
+          style="
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+          "
         >
-          Trial
+          ☰
         </button>
-        <button
-          id="google-signout-btn"
-          class="auth-btn"
-          style="display: none"
-          onclick="signOut()"
-        >
-          Sign out
-        </button>
-        <div id="profile-avatar" class="profile-avatar" style="display: none">
-          S
+
+        <div id="top-action-buttons" class="nav-actions-wrapper">
+          <button class="share-btn" onclick="openShareModal()">🔒 Share</button>
+          <button
+            class="gemini-trigger"
+            id="tut-gemini"
+            onclick="toggleGemini()"
+          >
+            ✨ Orbit AI
+          </button>
+          <button id="google-signin-btn" class="auth-btn">🔑 Sign in</button>
+          <button
+            id="guest-mode-btn"
+            onclick="enableGuestMode()"
+            class="auth-btn"
+          >
+            ⏳ Trial
+          </button>
+          <button
+            id="google-signout-btn"
+            class="auth-btn"
+            style="display: none"
+            onclick="signOut()"
+          >
+            👋 Sign out
+          </button>
+          <div id="profile-avatar" class="profile-avatar" style="display: none">
+            S
+          </div>
         </div>
       </div>
     </div>
@@ -426,7 +670,7 @@
       <div class="ep-content" id="ep-calendar" style="display: none">
         <div id="calendar-feed">
           <div style="padding: 20px; text-align: center">
-            Sign in to view events
+            🔑 Sign in to view events
           </div>
         </div>
       </div>
@@ -442,7 +686,7 @@
           class="primary-btn"
           style="width: 100%; margin-bottom: 16px"
         >
-          Save Note
+          💾 Save Note
         </button>
         <div id="keep-feed"></div>
       </div>
@@ -455,14 +699,14 @@
             placeholder="Add a task"
             style="flex-grow: 1"
           />
-          <button onclick="saveTask()" class="primary-btn">Add</button>
+          <button onclick="saveTask()" class="primary-btn">➕ Add</button>
         </div>
         <div id="tasks-feed"></div>
       </div>
       <div class="ep-content" id="ep-drive" style="display: none">
         <div id="drive-feed">
           <div style="padding: 20px; text-align: center">
-            Sign in to view files
+            🔑 Sign in to view files
           </div>
         </div>
       </div>
@@ -470,7 +714,7 @@
 
     <div id="share-modal">
       <h2 style="margin: 0 0 16px 0; font-weight: 400; font-size: 22px">
-        Share Magic Link
+        🔗 Share Magic Link
       </h2>
       <p
         style="
@@ -489,7 +733,7 @@
         "
       >
         <button class="secondary-btn" onclick="copyShareLink()">
-          🔗 Copy Magic Link
+          📋 Copy Magic Link
         </button>
         <button class="primary-btn" onclick="closeShareModal()">Done</button>
       </div>
@@ -503,14 +747,14 @@
             class="primary-btn"
             style="margin-right: 8px; padding: 6px 12px; font-size: 13px"
           >
-            Active Workspaces
+            🌌 Active Workspaces
           </button>
           <button
             onclick="switchHomeTab('bin')"
             class="secondary-btn"
             style="padding: 6px 12px; font-size: 13px"
           >
-            Trash Bin
+            🗑️ Trash Bin
           </button>
         </div>
         <div class="template-grid" id="home-create-section">
@@ -525,12 +769,33 @@
                 >+</span
               >
             </div>
-            <div class="template-name">Blank Matrix</div>
+            <div class="template-name">✨ Blank Matrix</div>
           </div>
         </div>
       </div>
       <div id="active-workspaces-view" class="recent-files">
-        <div class="recent-header">Your Saved Workspaces</div>
+        <div
+          class="recent-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span>📂 Your Saved Workspaces</span>
+          <button
+            onclick="nukeAllWorkspaces()"
+            class="secondary-btn"
+            style="
+              padding: 4px 12px;
+              font-size: 12px;
+              color: var(--google-red);
+              border-color: var(--google-red);
+            "
+          >
+            ☢️ Dev Wipe
+          </button>
+        </div>
         <div id="local-workspaces-feed" class="recent-grid">
           <div style="padding: 20px; color: var(--text-secondary)">
             No saved workspaces yet.
@@ -546,13 +811,13 @@
             align-items: center;
           "
         >
-          Deleted Workspaces
+          🗑️ Deleted Workspaces
           <button
             onclick="emptyBin()"
             class="secondary-btn"
             style="padding: 4px 12px; font-size: 12px; color: var(--google-red)"
           >
-            Empty Bin
+            🔥 Empty Bin
           </button>
         </div>
         <div id="bin-feed" class="recent-grid">
@@ -563,7 +828,7 @@
       </div>
       <div class="recent-files">
         <div class="recent-header" style="display: flex; align-items: center">
-          Recent Google Drive Files
+          ☁️ Recent Google Drive Files
           <button
             onclick="startSlideshow()"
             class="primary-btn"
@@ -574,7 +839,7 @@
         </div>
         <div id="home-recent-feed" class="recent-grid">
           <div style="padding: 20px; color: var(--text-secondary)">
-            Sign in to view Drive files
+            🔑 Sign in to view Drive files
           </div>
         </div>
       </div>
@@ -588,7 +853,7 @@
     <div id="workspace-screen" style="display: none">
       <div id="audio-hud">
         <div class="hud-title">
-          <span class="audio-pulse"></span> Orbit Matrix Info
+          <span class="audio-pulse"></span> 🌌 Orbit Matrix Info
         </div>
         <div id="distance-tracker">Tracking canvas...</div>
       </div>
@@ -607,7 +872,7 @@
           +
         </button>
         <div id="creation-popover">
-          <div class="popover-section-title">Google Cloud Imports</div>
+          <div class="popover-section-title">☁️ Google Cloud Imports</div>
           <div class="popover-row">
             <button class="popover-action blue" onclick="openFilePicker('doc')">
               📄 Add Existing Doc
@@ -626,7 +891,7 @@
             </button>
           </div>
           <div class="popover-divider"></div>
-          <div class="popover-section-title">Generate Blank Asset</div>
+          <div class="popover-section-title">✨ Generate Blank Asset</div>
           <div style="display: flex; flex-direction: column; gap: 8px">
             <input
               type="text"
@@ -669,7 +934,9 @@
           value="0"
           step="1"
         />
-        <span id="time-status" class="time-label clear-label">Live State</span>
+        <span id="time-status" class="time-label clear-label"
+          >🟢 Live State</span
+        >
       </div>
 
       <div id="gemini-panel">
@@ -689,8 +956,8 @@
         </div>
         <div id="gemini-chat">
           <div class="chat-message ai-message">
-            Hello! I can analyze your canvas open documents locally using
-            WebLLM.
+            👋 Hello! Ask me to research topics, generate multi-slide decks, or
+            structure data.
           </div>
         </div>
         <div class="gemini-input-area">
@@ -714,7 +981,7 @@
       <div id="edit-modal">
         <div class="modal-header">
           <span id="modal-title" style="font-weight: 500; font-size: 16px"
-            >Editing Document</span
+            >✏️ Editing Document</span
           >
           <button class="modal-close" onclick="closeEditModal()">
             Done Editing ✕
@@ -895,5 +1162,6 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="orbit-ai.js"></script>
   </body>
 </html>

@@ -22,16 +22,15 @@ let slideFiles = [];
 let currentSlide = 0;
 let slideInterval = null;
 let slideIsPlaying = true;
-let aiEngine = null;
 let linkSourceNode = null;
 let unlinkSourceNode = null;
 let initialTouchDist = null;
-const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
-
-// AI Mode & Guest Mode tracking
-let useWebLLM = false;
-let llmPreferenceSet = false;
 let isGuestMode = false;
+
+// Presentation Walkthrough State
+let presentationNodes = [];
+let currentPresentationIndex = 0;
+let isPresentationActive = false;
 
 let pan = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 let zoom = 0.85;
@@ -40,11 +39,183 @@ let start = { x: 0, y: 0 };
 pan.x -= 5000 * zoom;
 pan.y -= 5050 * zoom;
 
+// DEVELOPER BULK WIPE
+function wipeAllWorkspaces() {
+  const confirmWipe = confirm(
+    "DEV OVERRIDE: Are you sure you want to permanently delete ALL workspaces? This cannot be undone.",
+  );
+  if (confirmWipe) {
+    localStorage.removeItem("orbit_workspaces");
+    activeWorkspaceId = null;
+    projectThreads = [];
+    stateHistory = [];
+    if (typeof renderHomeWorkspaces === "function") renderHomeWorkspaces();
+    triggerToast("🗑️ System Purged: All workspaces deleted.");
+  }
+}
+window.wipeAllWorkspaces = wipeAllWorkspaces;
+
+// ==========================================
+// WORKSPACE PRESENTATION & HIERARCHY ENGINE
+// ==========================================
+function openWorkspacePresentationModal() {
+  closeAllMenus();
+  const allNodes = Array.from(document.querySelectorAll(".orbit-node"));
+  if (allNodes.length === 0) {
+    triggerToast("⚠️ No cards on canvas to present. Create cards first!");
+    return;
+  }
+  const slideCount = document.querySelectorAll(".slide-node").length;
+  const docCount = document.querySelectorAll(".doc-node").length;
+  const sheetCount = document.querySelectorAll(".sheet-node").length;
+
+  const summaryEl = document.getElementById("pres-counts-summary");
+  if (summaryEl) {
+    summaryEl.innerText = `Active Cards: ${allNodes.length} (🖼️ Slides: ${slideCount}, 📄 Docs: ${docCount}, 📊 Sheets: ${sheetCount})`;
+  }
+
+  const modal = document.getElementById("workspace-presentation-modal");
+  if (modal) modal.style.display = "flex";
+}
+window.openWorkspacePresentationModal = openWorkspacePresentationModal;
+
+function closeWorkspacePresentationModal() {
+  const modal = document.getElementById("workspace-presentation-modal");
+  if (modal) modal.style.display = "none";
+}
+window.closeWorkspacePresentationModal = closeWorkspacePresentationModal;
+
+function startWorkspacePresentation(orderType) {
+  closeWorkspacePresentationModal();
+  const allNodes = Array.from(document.querySelectorAll(".orbit-node"));
+  if (allNodes.length === 0) return;
+
+  // Automatically request full screen
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.warn(`Fullscreen error: ${err.message}`);
+    });
+  }
+
+  if (orderType === "slides_first") {
+    presentationNodes = [
+      ...allNodes.filter((n) => n.classList.contains("slide-node")),
+      ...allNodes.filter((n) => n.classList.contains("doc-node")),
+      ...allNodes.filter((n) => n.classList.contains("sheet-node")),
+    ];
+  } else if (orderType === "docs_first") {
+    presentationNodes = [
+      ...allNodes.filter((n) => n.classList.contains("doc-node")),
+      ...allNodes.filter((n) => n.classList.contains("sheet-node")),
+      ...allNodes.filter((n) => n.classList.contains("slide-node")),
+    ];
+  } else if (orderType === "sheets_first") {
+    presentationNodes = [
+      ...allNodes.filter((n) => n.classList.contains("sheet-node")),
+      ...allNodes.filter((n) => n.classList.contains("doc-node")),
+      ...allNodes.filter((n) => n.classList.contains("slide-node")),
+    ];
+  } else {
+    presentationNodes = [...allNodes];
+  }
+
+  isPresentationActive = true;
+  currentPresentationIndex = 0;
+  const bar = document.getElementById("presentation-walkthrough-bar");
+  if (bar) bar.style.display = "flex";
+
+  focusPresentationNode(0);
+  triggerToast("📽️ Presentation Mode Active (Use ◀ / ▶ or Arrow Keys)");
+}
+window.startWorkspacePresentation = startWorkspacePresentation;
+
+function focusPresentationNode(index) {
+  if (!presentationNodes || presentationNodes.length === 0) return;
+  if (index < 0) index = 0;
+  if (index >= presentationNodes.length) index = presentationNodes.length - 1;
+  currentPresentationIndex = index;
+
+  document.querySelectorAll(".orbit-node").forEach((n) => {
+    n.classList.remove("presentation-focused");
+    n.style.boxShadow = "";
+  });
+
+  const node = presentationNodes[currentPresentationIndex];
+  if (!node) return;
+
+  node.classList.add("presentation-focused");
+  node.style.boxShadow = "0 0 0 4px #8ab4f8, 0 16px 48px rgba(0,0,0,0.8)";
+
+  const nodeX = parseFloat(node.style.left) || 0;
+  const nodeY = parseFloat(node.style.top) || 0;
+  const nodeWidth = node.offsetWidth || 380;
+  const nodeHeight = node.offsetHeight || 300;
+
+  zoom = 1.0;
+  pan.x = window.innerWidth / 2 - (nodeX + nodeWidth / 2) * zoom;
+  pan.y = window.innerHeight / 2 - (nodeY + nodeHeight / 2) * zoom;
+  updateTransform();
+
+  const title = node.getAttribute("data-title") || "Card";
+  const type = (node.getAttribute("data-type") || "doc").toUpperCase();
+  const counterEl = document.getElementById("pres-step-indicator");
+  if (counterEl) {
+    counterEl.innerText = `[${type}] ${title} (${currentPresentationIndex + 1}/${presentationNodes.length})`;
+  }
+}
+
+function nextPresentationNode() {
+  if (currentPresentationIndex < presentationNodes.length - 1) {
+    focusPresentationNode(currentPresentationIndex + 1);
+  } else {
+    triggerToast("🏁 Reached end of presentation!");
+  }
+}
+window.nextPresentationNode = nextPresentationNode;
+
+function prevPresentationNode() {
+  if (currentPresentationIndex > 0) {
+    focusPresentationNode(currentPresentationIndex - 1);
+  }
+}
+window.prevPresentationNode = prevPresentationNode;
+
+function exitWorkspacePresentation() {
+  isPresentationActive = false;
+  presentationNodes = [];
+  document.querySelectorAll(".orbit-node").forEach((n) => {
+    n.classList.remove("presentation-focused");
+    n.style.boxShadow = "";
+  });
+  const bar = document.getElementById("presentation-walkthrough-bar");
+  if (bar) bar.style.display = "none";
+  recenterCanvas();
+
+  // Automatically exit full screen
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen();
+  }
+
+  triggerToast("Exited Presentation Mode");
+}
+window.exitWorkspacePresentation = exitWorkspacePresentation;
+
+document.addEventListener("keydown", (e) => {
+  if (!isPresentationActive) return;
+  if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+    e.preventDefault();
+    nextPresentationNode();
+  } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+    e.preventDefault();
+    prevPresentationNode();
+  } else if (e.key === "Escape") {
+    exitWorkspacePresentation();
+  }
+});
+
 function checkDeveloperKeyRequirement() {
   const modal = document.getElementById("key-setup-backdrop");
-  if (modal) {
-    modal.style.display = "none";
-  }
+  if (modal) modal.style.display = "none";
 }
 
 function syncNodeIdCounter() {
@@ -117,7 +288,6 @@ document.addEventListener("click", (e) => {
   });
 });
 
-// --- GUEST MODE / TRY DEMO ENGINE ---
 function enableGuestMode() {
   isGuestMode = true;
   closeAllMenus();
@@ -126,12 +296,11 @@ function enableGuestMode() {
   const signinBtn = document.getElementById("google-signin-btn");
   if (guestBtn) guestBtn.style.display = "none";
   if (signinBtn) {
-    signinBtn.innerText = "Sign in to Sync Cloud";
+    signinBtn.innerText = "🔑 Sign in to Sync Cloud";
     signinBtn.style.background = "#333";
     signinBtn.style.border = "1px solid #555";
   }
 
-  // Visually disable Cloud Import buttons, but don't break the onclick event
   document
     .querySelectorAll(".popover-action[onclick*='openFilePicker']")
     .forEach((btn) => {
@@ -140,13 +309,10 @@ function enableGuestMode() {
     });
 
   createNewWorkspace();
-  triggerToast(
-    "Guest Demo Mode Active. Testing locally without Google Sign-In.",
-  );
+  triggerToast("⏳ Guest Demo Mode Active (5 Cards Limit).");
 }
 window.enableGuestMode = enableGuestMode;
 
-// Resets visual locks when a user actually signs in
 function resetGuestMode() {
   isGuestMode = false;
   document
@@ -157,7 +323,6 @@ function resetGuestMode() {
     });
 }
 
-// --- INTERACTIVE OFFLINE CARD GENERATOR ---
 function spawnBlankNode(
   type,
   customTitle = null,
@@ -165,6 +330,15 @@ function spawnBlankNode(
   offsetX = -190,
   offsetY = -140,
 ) {
+  const isTrial = isGuestMode || !accessToken;
+  const currentCount = document.querySelectorAll(".orbit-node").length;
+  if (isTrial && currentCount >= 5) {
+    triggerToast(
+      "⚠️ Trial limit reached (Max 5 cards). Sign in to unlock unlimited creation!",
+    );
+    return false;
+  }
+
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
   let title =
@@ -181,10 +355,9 @@ function spawnBlankNode(
   node.style.left = `${(-pan.x + window.innerWidth / 2) / zoom + offsetX}px`;
   node.style.top = `${(-pan.y + window.innerHeight / 2) / zoom + offsetY}px`;
 
-  // Generate real interactive offline editors inside card body
   let editorContent = "";
   if (customText) {
-    editorContent = `<div style="padding: 12px; font-size: 13px; line-height: 1.5; color: var(--text-primary, #fff);">${customText}</div>`;
+    editorContent = customText;
   } else if (type === "sheet") {
     editorContent = `
       <div style="padding: 8px; overflow: auto; max-height: 220px; background: #111;">
@@ -207,11 +380,6 @@ function spawnBlankNode(
               <td contenteditable="true" style="border: 1px solid #333; padding: 6px;">250</td>
               <td contenteditable="true" style="border: 1px solid #333; padding: 6px;">Pending</td>
             </tr>
-            <tr>
-              <td contenteditable="true" style="border: 1px solid #333; padding: 6px;">Item 3</td>
-              <td contenteditable="true" style="border: 1px solid #333; padding: 6px;">400</td>
-              <td contenteditable="true" style="border: 1px solid #333; padding: 6px;">Done</td>
-            </tr>
           </tbody>
         </table>
       </div>`;
@@ -222,15 +390,13 @@ function spawnBlankNode(
         <ul contenteditable="true" style="margin: 0; padding-left: 20px; font-size: 13px; color: #ccc; line-height: 1.6;">
           <li>Key point or objective 1</li>
           <li>Supporting data and analysis</li>
-          <li>Summary and next steps</li>
         </ul>
       </div>`;
   } else {
-    // Standard DOC card
     editorContent = `
-      <div contenteditable="true" style="padding: 14px; min-height: 180px; font-size: 13px; line-height: 1.6; color: #e0e0e0; outline: none; background: #161616;" placeholder="Type your document content here...">
+      <div contenteditable="true" style="padding: 14px; min-height: 180px; font-size: 13px; line-height: 1.6; color: #e0e0e0; outline: none; background: #161616;">
         <b>Offline Document Editor</b><br>
-        Start typing here to draft notes, ideas, or specifications. Click edit in the header whenever you are ready to link a live Google Doc.
+        Start typing here to draft notes, ideas, or specifications.
       </div>`;
   }
 
@@ -238,11 +404,11 @@ function spawnBlankNode(
         <div class="node-header">
             <span class="header-title">${title}</span>
             <div class="header-actions">
-                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">Link</button>
-                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">Cut</button>
-                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">Focus</button>
-                <button class="action-btn edit-action" onclick="event.stopPropagation(); openFilePicker('${type}')" title="Edit">Edit</button>
-                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">Del</button>
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">🔗</button>
+                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">✂️</button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">⛶</button>
+                <button class="action-btn edit-action" onclick="event.stopPropagation(); openFilePicker('${type}')" title="Edit">✏️</button>
+                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">✕</button>
             </div>
         </div>
         <div class="node-body" style="padding: 0;">${editorContent}</div>
@@ -254,30 +420,50 @@ function spawnBlankNode(
   if (titleInput) titleInput.value = "";
   const pop = document.getElementById("creation-popover");
   if (pop) pop.style.display = "none";
-  saveCurrentWorkspace("Created Blank Node");
+  saveCurrentWorkspace("📝 Created Blank Node");
+  return true;
 }
 window.spawnBlankNode = spawnBlankNode;
 
 function spawnOnboardingCards() {
+  const cardStyle = `padding: 18px; background: linear-gradient(135deg, #18181f 0%, #101014 100%); color: #e8eaed; font-size: 13px; line-height: 1.6; height: 100%; box-sizing: border-box; border-radius: 0 0 10px 10px;`;
+
   spawnBlankNode(
     "doc",
-    "1. Welcome & Navigation",
-    "Pan Canvas: Click & drag anywhere on background.<br>Zoom: Use mouse wheel or pinch gesture.<br>Center View: Click 'Recenter Canvas' on top bar.",
-    -400,
+    "1. Matrix Navigation",
+    `<div style="${cardStyle}">
+      <div style="color: #8ab4f8; font-weight: bold; margin-bottom: 8px;">🧭 Moving Around</div>
+      • <b>Pan:</b> Click & drag the background.<br>
+      • <b>Zoom:</b> Use mouse wheel or pinch.<br>
+      • <b>Center:</b> Click 'Recenter Canvas' in the View menu.
+    </div>`,
+    -420,
     -150,
   );
+
   spawnBlankNode(
     "sheet",
-    "2. Adding Assets",
-    "Click (+ Create) at bottom right to add Doc, Sheet, or Slide cards.<br>Click Edit on card header to open Google Drive picker.",
+    "2. Cloud Assets",
+    `<div style="${cardStyle}">
+      <div style="color: #81c995; font-weight: bold; margin-bottom: 8px;">➕ Spawning Cards</div>
+      • <b>Create:</b> Click the floating <b>(+)</b> button.<br>
+      • <b>Import:</b> Click <b>✏️ (Edit)</b> to mount Google Drive files.<br>
+      • <b>Focus:</b> Click <b>⛶</b> to full-screen a card.
+    </div>`,
     0,
     -150,
   );
+
   spawnBlankNode(
     "slide",
-    "3. Connecting & Cutting Threads",
-    "Link Cards: Click Link on Card A, then click Card B.<br>Cut Links: Click Cut on Card A, then click Card B to disconnect.",
-    400,
+    "3. Logic Threads",
+    `<div style="${cardStyle}">
+      <div style="color: #fdd663; font-weight: bold; margin-bottom: 8px;">🔗 Visual Linking</div>
+      • <b>Link:</b> Click <b>🔗</b> on Card A, then click Card B.<br>
+      • <b>Cut:</b> Click <b>✂️</b> on Card A, then click Card B.<br>
+      • <b>AI Matrix:</b> Orbit AI reads connected threads!
+    </div>`,
+    420,
     -150,
   );
 }
@@ -288,7 +474,7 @@ function deleteNode(id) {
   if (node) node.remove();
   projectThreads = projectThreads.filter((t) => t.from !== id && t.to !== id);
   drawThreads();
-  saveCurrentWorkspace("Deleted File");
+  saveCurrentWorkspace("🗑️ Deleted File");
 }
 window.deleteNode = deleteNode;
 
@@ -297,7 +483,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     openCommandPalette();
   }
-  if (e.key === "Escape") closeCommandPalette();
+  if (e.key === "Escape" && !isPresentationActive) closeCommandPalette();
 });
 
 function openCommandPalette() {
@@ -328,7 +514,8 @@ window.filterPalette = filterPalette;
 
 function goToHome() {
   closeAllMenus();
-  saveCurrentWorkspace("Navigating Home");
+  if (isPresentationActive) exitWorkspacePresentation();
+  saveCurrentWorkspace("🏠 Navigating Home");
   document.getElementById("workspace-screen").style.display = "none";
   document.getElementById("doc-meta-area").style.display = "none";
   document.getElementById("home-screen").style.display = "block";
@@ -359,7 +546,7 @@ function createNewWorkspace() {
   const titleEl = document.getElementById("workspace-title");
   if (titleEl) titleEl.value = "Untitled Workspace";
   spawnOnboardingCards();
-  saveCurrentWorkspace("Blank Workspace Created");
+  saveCurrentWorkspace("✨ Blank Workspace Created");
   openWorkspaceScreen();
 }
 window.createNewWorkspace = createNewWorkspace;
@@ -412,15 +599,14 @@ function trashWorkspace(e, id) {
   if (w) w.isDeleted = true;
   localStorage.setItem("orbit_workspaces", JSON.stringify(ws));
   renderHomeWorkspaces();
-  triggerToast("Moved to Bin");
+  triggerToast("🗑️ Moved to Bin");
 }
 window.trashWorkspace = trashWorkspace;
 
 async function spawnBlankNodeDrive(type) {
-  // Graceful Guest Mode fallback: create local editable card without Google Drive auth
   if (!accessToken || isGuestMode) {
     spawnBlankNode(type);
-    triggerToast(`Guest Mode: Created editable ${type.toUpperCase()} card.`);
+    triggerToast(`⏳ Guest Mode: Created editable ${type.toUpperCase()} card.`);
     return;
   }
   syncNodeIdCounter();
@@ -429,7 +615,7 @@ async function spawnBlankNodeDrive(type) {
     titleInput && titleInput.value.trim()
       ? titleInput.value.trim()
       : `Untitled ${type.toUpperCase()}`;
-  triggerToast("Creating asset container matrix architecture...");
+  triggerToast("☁️ Creating asset container matrix architecture...");
 
   let mimeType = "";
   if (type === "doc") mimeType = "application/vnd.google-apps.document";
@@ -458,10 +644,10 @@ async function spawnBlankNodeDrive(type) {
     if (pop) pop.style.display = "none";
 
     spawnCloudNode(type, file.id, title);
-    triggerToast(`${title} created successfully.`);
+    triggerToast(`✅ ${title} created successfully.`);
   } catch (error) {
     console.error(error);
-    triggerToast("Failed to create file. Check console.");
+    triggerToast("❌ Failed to create file. Check console.");
   }
 }
 window.spawnBlankNodeDrive = spawnBlankNodeDrive;
@@ -473,7 +659,7 @@ function restoreWorkspace(e, id) {
   if (w) w.isDeleted = false;
   localStorage.setItem("orbit_workspaces", JSON.stringify(ws));
   renderHomeWorkspaces();
-  triggerToast("Workspace Restored");
+  triggerToast("♻️ Workspace Restored");
 }
 window.restoreWorkspace = restoreWorkspace;
 
@@ -483,7 +669,7 @@ function permDeleteWorkspace(e, id) {
   ws = ws.filter((x) => x.id !== id);
   localStorage.setItem("orbit_workspaces", JSON.stringify(ws));
   renderHomeWorkspaces();
-  triggerToast("Permanently Deleted");
+  triggerToast("🔥 Permanently Deleted");
 }
 window.permDeleteWorkspace = permDeleteWorkspace;
 
@@ -492,7 +678,7 @@ function emptyBin() {
   ws = ws.filter((x) => !x.isDeleted);
   localStorage.setItem("orbit_workspaces", JSON.stringify(ws));
   renderHomeWorkspaces();
-  triggerToast("Bin Emptied");
+  triggerToast("🔥 Bin Emptied");
 }
 window.emptyBin = emptyBin;
 
@@ -517,12 +703,12 @@ function renderHomeWorkspaces() {
     activeWs.forEach((ws) => {
       activeFeed.innerHTML += `
             <div class="recent-card" onclick="loadWorkspace('${ws.id}')">
-                <span style="font-size:24px;color:var(--google-blue);">Matrix</span>
+                <span style="font-size:24px;color:var(--google-blue);">🌌</span>
                 <div style="flex-grow:1;overflow:hidden;">
                     <div style="font-weight:500;font-size:14px;white-space:nowrap;text-overflow:ellipsis;">${ws.title}</div>
                     <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${new Date(ws.lastModified).toLocaleString()}</div>
                 </div>
-                <button onclick="trashWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">Del</button>
+                <button onclick="trashWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">🗑️</button>
             </div>`;
     });
   }
@@ -535,13 +721,13 @@ function renderHomeWorkspaces() {
     binWs.forEach((ws) => {
       binFeed.innerHTML += `
             <div class="recent-card" style="opacity:0.7;">
-                <span style="font-size:24px;color:var(--text-secondary);">Matrix</span>
+                <span style="font-size:24px;color:var(--text-secondary);">🌌</span>
                 <div style="flex-grow:1;overflow:hidden;">
                     <div style="font-weight:500;font-size:14px;white-space:nowrap;text-overflow:ellipsis;text-decoration:line-through;">${ws.title}</div>
                     <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${new Date(ws.lastModified).toLocaleString()}</div>
                 </div>
-                <button onclick="restoreWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-green);cursor:pointer;font-size:14px;margin-right:8px;">Restore</button>
-                <button onclick="permDeleteWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-red);cursor:pointer;font-size:16px;">Del</button>
+                <button onclick="restoreWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-green);cursor:pointer;font-size:14px;margin-right:8px;">♻️</button>
+                <button onclick="permDeleteWorkspace(event, '${ws.id}')" style="background:none;border:none;color:var(--google-red);cursor:pointer;font-size:16px;">✕</button>
             </div>`;
     });
   }
@@ -630,7 +816,7 @@ function triggerUndo() {
   if (v > 0) {
     historySlider.value = v - 1;
     historySlider.dispatchEvent(new Event("input"));
-    triggerToast("Undo applied");
+    triggerToast("↩️ Undo applied");
   }
 }
 window.triggerUndo = triggerUndo;
@@ -641,7 +827,7 @@ function triggerRedo() {
   if (v < parseInt(historySlider.max)) {
     historySlider.value = v + 1;
     historySlider.dispatchEvent(new Event("input"));
-    triggerToast("Redo applied");
+    triggerToast("↪️ Redo applied");
   }
 }
 window.triggerRedo = triggerRedo;
@@ -679,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
       drawThreads();
-      triggerToast("Magic Link layout restored.");
+      triggerToast("🔗 Magic Link layout restored.");
       window.history.replaceState({}, document.title, window.location.pathname);
       openWorkspaceScreen();
       saveCurrentWorkspace("Loaded Shared Link");
@@ -688,7 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   } catch (error) {
     console.error(error);
-    triggerToast("Corrupt data cleared.");
+    triggerToast("❌ Corrupt data cleared.");
   }
   syncNodeIdCounter();
   checkDeveloperKeyRequirement();
@@ -703,7 +889,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (DEVELOPER_KEY) safeInit();
 });
 
-// Canvas Click Event handling for Threading & Unlinking
 if (container) {
   container.addEventListener("click", (e) => {
     const nodeElement = e.target.closest(".orbit-node");
@@ -726,7 +911,7 @@ if (container) {
       document.querySelectorAll(".portal-frame").forEach((iframe) => {
         iframe.style.pointerEvents = "auto";
       });
-      triggerToast("Action cancelled");
+      triggerToast("🛑 Action cancelled");
       return;
     }
 
@@ -741,52 +926,6 @@ if (container) {
     }
   });
 }
-
-let activeMenu = null;
-document.querySelectorAll(".google-menu-bar .menu-item").forEach((item) => {
-  item.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const menuId = item.getAttribute("data-menu");
-    if (activeMenu === menuId) {
-      closeAllMenus();
-    } else {
-      openMenu(menuId, item);
-    }
-  });
-  item.addEventListener("mouseenter", (e) => {
-    if (activeMenu && activeMenu !== item.getAttribute("data-menu")) {
-      openMenu(item.getAttribute("data-menu"), item);
-    }
-  });
-});
-
-function openMenu(menuId, element) {
-  closeAllMenus();
-  if (menuId) {
-    activeMenu = menuId;
-    if (element) element.classList.add("active");
-    const target = document.getElementById(menuId);
-    if (target) target.style.display = "block";
-  }
-}
-window.openMenu = openMenu;
-
-function closeAllMenus() {
-  activeMenu = null;
-  document
-    .querySelectorAll(".dropdown-menu")
-    .forEach((menu) => (menu.style.display = "none"));
-  document
-    .querySelectorAll(".menu-item")
-    .forEach((item) => item.classList.remove("active"));
-}
-window.closeAllMenus = closeAllMenus;
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".google-menu-bar")) {
-    closeAllMenus();
-  }
-});
 
 function triggerToast(message) {
   closeAllMenus();
@@ -816,7 +955,7 @@ function toggleFullscreen() {
   closeAllMenus();
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
-      triggerToast(`Error: ${err.message}`);
+      triggerToast(`❌ Error: ${err.message}`);
     });
   } else {
     if (document.exitFullscreen) {
@@ -868,10 +1007,10 @@ function mixLayoutSnapshot() {
     navigator.clipboard.writeText(
       window.location.origin + window.location.pathname + "?matrix=" + b64,
     );
-    triggerToast("Magic Link copied.");
+    triggerToast("📋 Magic Link copied.");
     closeShareModal();
   } catch (err) {
-    triggerToast("Error compressing link.");
+    triggerToast("❌ Error compressing link.");
   }
 }
 window.mixLayoutSnapshot = mixLayoutSnapshot;
@@ -901,19 +1040,19 @@ function openSidePanel(tabName, event) {
     title = "Workspace Tools";
   }
   if (tabName === "calendar") {
-    title = "Calendar";
+    title = "📅 Calendar";
     if (accessToken) fetchCalendarEvents();
   }
   if (tabName === "keep") {
-    title = "Keep";
+    title = "💡 Keep";
     renderKeepNotes();
   }
   if (tabName === "tasks") {
-    title = "Tasks";
+    title = "✅ Tasks";
     renderTasks();
   }
   if (tabName === "drive") {
-    title = "Drive";
+    title = "📁 Drive";
     if (accessToken) fetchDriveFiles();
   }
   const titleEl = document.getElementById("ep-title");
@@ -963,7 +1102,7 @@ async function fetchCalendarEvents() {
       feed.innerHTML += `<div class="ep-item"><strong>${new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</strong> ${event.summary || "Busy"}</div>`;
     });
   } catch (err) {
-    feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">Error loading Calendar.</div>`;
+    feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">❌ Error loading Calendar.</div>`;
   }
 }
 
@@ -979,20 +1118,20 @@ async function fetchDriveFiles() {
       orderBy: "viewedByMeTime desc",
     });
     response.result.files.forEach((file) => {
-      let icon = "Doc",
+      let icon = "📄",
         type = "doc";
       if (file.mimeType.includes("spreadsheet")) {
-        icon = "Sheet";
+        icon = "📊";
         type = "sheet";
       }
       if (file.mimeType.includes("presentation")) {
-        icon = "Slide";
+        icon = "🖼️";
         type = "slide";
       }
       feed.innerHTML += `<div class="ep-item" style="cursor:pointer;" onclick="spawnCloudNode('${type}', '${file.id}', '${file.name.replace(/'/g, "\\'")}')"><strong>${icon} Click to drop</strong> ${file.name}</div>`;
     });
   } catch (err) {
-    feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">Error loading Drive files.</div>`;
+    feed.innerHTML += `<div class="ep-item" style="color:var(--google-red);">❌ Error loading Drive files.</div>`;
   }
 }
 
@@ -1020,20 +1159,20 @@ async function fetchHomeDriveFiles() {
         f.mimeType.includes("presentation") || f.mimeType.startsWith("image/"),
     );
     response.result.files.slice(0, 12).forEach((file) => {
-      let icon = "Doc",
+      let icon = "📄",
         type = "doc",
         color = "var(--google-blue)";
       if (file.mimeType.includes("spreadsheet")) {
-        icon = "Sheet";
+        icon = "📊";
         type = "sheet";
         color = "var(--google-green)";
       }
       if (file.mimeType.includes("presentation")) {
-        icon = "Slide";
+        icon = "🖼️";
         type = "slide";
         color = "var(--google-yellow)";
       } else if (file.mimeType.startsWith("image/")) {
-        icon = "Img";
+        icon = "🖼️";
         type = "slide";
         color = "var(--google-yellow)";
       }
@@ -1044,20 +1183,20 @@ async function fetchHomeDriveFiles() {
             </div>`;
     });
   } catch (err) {
-    feed.innerHTML = `<div style="padding:20px; color:var(--google-red);">Error loading Drive files.</div>`;
+    feed.innerHTML = `<div style="padding:20px; color:var(--google-red);">❌ Error loading Drive files.</div>`;
   }
 }
 window.fetchHomeDriveFiles = fetchHomeDriveFiles;
 
 function startSlideshow() {
   if (slideFiles.length === 0) {
-    triggerToast("No visual files found for slideshow.");
+    triggerToast("⚠️ No visual files found for slideshow.");
     return;
   }
   document.getElementById("slideshow-modal").style.display = "flex";
   currentSlide = 0;
   slideIsPlaying = true;
-  document.getElementById("slide-play-btn").innerText = "Pause";
+  document.getElementById("slide-play-btn").innerText = "⏸️ Pause";
   showSlide();
   slideInterval = setInterval(() => {
     if (slideIsPlaying) nextSlide();
@@ -1094,8 +1233,8 @@ window.prevSlide = prevSlide;
 function toggleSlidePlay() {
   slideIsPlaying = !slideIsPlaying;
   document.getElementById("slide-play-btn").innerText = slideIsPlaying
-    ? "Play"
-    : "Pause";
+    ? "⏸️ Pause"
+    : "▶️ Play";
 }
 window.toggleSlidePlay = toggleSlidePlay;
 
@@ -1190,7 +1329,7 @@ function toggleLinkMode(nodeId) {
     document.getElementById(nodeId)?.classList.add("linking-active");
     const statusEl = document.getElementById("linking-status");
     if (statusEl) {
-      statusEl.innerText = "Click another node to connect line...";
+      statusEl.innerText = "🔗 Click another node to connect line...";
       statusEl.style.display = "block";
     }
     document.querySelectorAll(".portal-frame").forEach((iframe) => {
@@ -1230,8 +1369,8 @@ function completeThreading(targetId) {
       iframe.style.pointerEvents = "auto";
     });
     drawThreads();
-    saveCurrentWorkspace("Linked Documents Matrix");
-    triggerToast("Logic Thread Stitched.");
+    saveCurrentWorkspace("🔗 Linked Documents Matrix");
+    triggerToast("✅ Logic Thread Stitched.");
   }
 }
 
@@ -1246,7 +1385,7 @@ function toggleUnlinkMode(nodeId) {
     document.getElementById(nodeId)?.classList.add("unlinking-active");
     const statusEl = document.getElementById("linking-status");
     if (statusEl) {
-      statusEl.innerText = "Click connected node to cut thread...";
+      statusEl.innerText = "✂️ Click connected node to cut thread...";
       statusEl.style.display = "block";
     }
     document.querySelectorAll(".portal-frame").forEach((iframe) => {
@@ -1289,10 +1428,10 @@ function completeUnlinking(targetId) {
     });
     drawThreads();
     if (projectThreads.length < prevCount) {
-      saveCurrentWorkspace("Cut Thread Connection");
-      triggerToast("Logic Thread Cut.");
+      saveCurrentWorkspace("✂️ Cut Thread Connection");
+      triggerToast("✅ Logic Thread Cut.");
     } else {
-      triggerToast("No existing thread between these cards.");
+      triggerToast("⚠️ No existing thread between these cards.");
     }
   }
 }
@@ -1360,6 +1499,7 @@ if (viewport) {
       e.target.closest(".orbit-node") ||
       e.target.closest("#canvas-creation-hub") ||
       e.target.closest("#temporal-scrubber") ||
+      e.target.closest("#presentation-walkthrough-bar") ||
       e.target.tagName === "BUTTON" ||
       document.querySelector(".focused-node") ||
       e.target.closest("#expanded-side-panel") ||
@@ -1379,7 +1519,8 @@ if (viewport) {
         e.target.closest("#expanded-side-panel") ||
         e.target.closest("#command-palette") ||
         e.target.closest("#canvas-creation-hub") ||
-        e.target.closest("#temporal-scrubber")
+        e.target.closest("#temporal-scrubber") ||
+        isPresentationActive
       )
         return;
       e.preventDefault();
@@ -1393,12 +1534,12 @@ if (viewport) {
     { passive: false },
   );
 
-  // Touch event pan and zoom handling
   viewport.addEventListener("touchstart", (e) => {
     if (
       e.target.closest(".orbit-node") ||
       e.target.closest("#canvas-creation-hub") ||
       e.target.closest("#temporal-scrubber") ||
+      e.target.closest("#presentation-walkthrough-bar") ||
       e.target.tagName === "BUTTON" ||
       document.querySelector(".focused-node") ||
       e.target.closest("#expanded-side-panel") ||
@@ -1449,7 +1590,7 @@ if (viewport) {
 }
 
 window.addEventListener("mousemove", (e) => {
-  if (isDragging) {
+  if (isDragging && !isPresentationActive) {
     pan.x = e.clientX - start.x;
     pan.y = e.clientY - start.y;
     updateTransform();
@@ -1460,7 +1601,6 @@ window.addEventListener("mouseup", () => {
   isDragging = false;
 });
 
-// DRAGGABLE CARDS FUNCTIONALITY (Mouse + Touch)
 function makeElementDraggable(elmnt) {
   let pos1 = 0,
     pos2 = 0,
@@ -1476,7 +1616,8 @@ function makeElementDraggable(elmnt) {
       if (
         elmnt.classList.contains("focused-node") ||
         linkSourceNode ||
-        unlinkSourceNode
+        unlinkSourceNode ||
+        isPresentationActive
       )
         return false;
 
@@ -1506,7 +1647,6 @@ function makeElementDraggable(elmnt) {
       saveCurrentWorkspace("Moved Document");
     };
 
-    // Mouse Dragging
     header.onmousedown = (e) => {
       if (e.target.closest(".action-btn")) return;
       if (startDrag(e.clientX, e.clientY)) {
@@ -1519,7 +1659,6 @@ function makeElementDraggable(elmnt) {
       }
     };
 
-    // Touch Dragging
     header.ontouchstart = (e) => {
       if (e.target.closest(".action-btn")) return;
       if (e.touches.length === 1) {
@@ -1548,7 +1687,7 @@ function openFilePicker(type) {
   closeAllMenus();
   if (!accessToken || isGuestMode) {
     triggerToast(
-      "Cloud imports require Sign-in. Use 'Generate Blank Asset' below.",
+      "☁️ Cloud imports require Sign-in. Use 'Generate Blank Asset' below.",
     );
     return;
   }
@@ -1585,16 +1724,16 @@ function createPickerInstance() {
 function pickerCallback(data) {
   if (data.action === google.picker.Action.PICKED) {
     spawnCloudNode(currentTargetType, data.docs[0].id, data.docs[0].name);
-    triggerToast(`Mounted ${data.docs[0].name}`);
+    triggerToast(`✅ Mounted ${data.docs[0].name}`);
   }
 }
 
 function openEditModal(url, title) {
   if (!url || url.includes("undefined")) {
-    triggerToast("Save file to cloud first before full editing");
+    triggerToast("⚠️ Save file to cloud first before full editing");
     return;
   }
-  document.getElementById("modal-title").innerText = `Editing: ${title}`;
+  document.getElementById("modal-title").innerText = `✏️ Editing: ${title}`;
   document.getElementById("edit-frame").src = url;
   document.getElementById("edit-modal").style.display = "flex";
 }
@@ -1603,7 +1742,7 @@ window.openEditModal = openEditModal;
 function closeEditModal() {
   document.getElementById("edit-frame").src = "";
   document.getElementById("edit-modal").style.display = "none";
-  saveCurrentWorkspace("Finished Editing");
+  saveCurrentWorkspace("✅ Finished Editing");
 }
 window.closeEditModal = closeEditModal;
 
@@ -1651,302 +1790,54 @@ function spawnCloudNode(type, fileId, fileName) {
 
   const presentBtn =
     type === "slide"
-      ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">Present</button>`
+      ? `<button class="action-btn" onclick="event.stopPropagation(); openPresentation('${fileId}')" title="Present Mode">📽️</button>`
       : "";
 
   node.innerHTML = `
         <div class="node-header">
             <span class="header-title">${fileName}</span>
             <div class="header-actions">
-                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">Link</button> 
-                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">Cut</button>
-                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">Focus</button> 
+                <button class="action-btn link-trigger" onclick="event.stopPropagation(); toggleLinkMode('${node.id}')" title="Connect Thread">🔗</button> 
+                <button class="action-btn unlink-trigger" onclick="event.stopPropagation(); toggleUnlinkMode('${node.id}')" title="Cut Thread">✂️</button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFocusMode('${node.id}')" title="Focus">⛶</button> 
                 ${presentBtn}
-                <button class="action-btn edit-action" onclick="event.stopPropagation(); openEditModal('${editUrl}', '${fileName}')" title="Edit">Edit</button> 
-                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">Del</button>
+                <button class="action-btn edit-action" onclick="event.stopPropagation(); openEditModal('${editUrl}', '${fileName}')" title="Edit">✏️</button> 
+                <button class="action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNode('${node.id}')" title="Delete">✕</button>
             </div>
         </div>
         <div class="node-body" style="padding: 0;"><iframe class="portal-frame" src="${previewUrl}"></iframe></div>`;
 
   container.appendChild(node);
   makeElementDraggable(node);
-  saveCurrentWorkspace(`Imported ${fileName}`);
+  saveCurrentWorkspace(`☁️ Imported ${fileName}`);
 }
 window.spawnCloudNode = spawnCloudNode;
 
-// AI ASSISTANT (WEBLLM + SMART COMMAND ENGINE)
-async function toggleGemini() {
+function toggleGemini() {
   closeAllMenus();
   const panel = document.getElementById("gemini-panel");
   if (!panel) return;
   panel.classList.toggle("open");
-
-  const chat = document.getElementById("gemini-chat");
-  if (chat && (!llmPreferenceSet || chat.children.length <= 1)) {
-    chat.innerHTML = `
-      <div class="chat-message ai-message" id="llm-selector-card" style="background: #1e1e1e; border: 1px solid #333; padding: 12px; border-radius: 8px;">
-        <b>Select AI Assistant Mode:</b><br>
-        <p style="margin: 8px 0; font-size: 13px; color: #aaa;">
-          Choose how Orbit AI should process your requests:
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-          <button onclick="setLLMPreference(true)" style="padding: 8px 12px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px;">
-            <b>WebLLM Engine</b> (In-Browser WebGPU AI)
-          </button>
-          <button onclick="setLLMPreference(false)" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px;">
-            <b>Workspace Command Engine</b> (Fast local canvas commands)
-          </button>
-        </div>
-      </div>
-    `;
-    chat.scrollTop = chat.scrollHeight;
-  }
 }
 window.toggleGemini = toggleGemini;
 
-function setLLMPreference(enableWebLLM) {
-  useWebLLM = enableWebLLM;
-  llmPreferenceSet = true;
-
-  const chat = document.getElementById("gemini-chat");
-  const selector = document.getElementById("llm-selector-card");
-  if (selector) selector.remove();
-
-  if (useWebLLM) {
-    chat.insertAdjacentHTML(
-      "beforeend",
-      `<div class="chat-message ai-message" style="background:var(--google-blue); color:#fff;">
-          <b>WebLLM Active:</b><br>
-          In-browser WebGPU model initialized. Ask questions or type workspace commands below.
-       </div>`,
-    );
-  } else {
-    chat.insertAdjacentHTML(
-      "beforeend",
-      `<div class="chat-message ai-message" style="background:#222; border: 1px solid #444; color:#fff;">
-          <b>Command Engine Active:</b><br>
-          Available commands:<br>
-          • <code>tutorial</code> / <code>help</code><br>
-          • <code>analyze page</code><br>
-          • <code>add doc [Name]</code><br>
-          • <code>add sheet [Name]</code><br>
-          • <code>add slide [Name]</code><br>
-          • <code>remove files</code>
-       </div>`,
-    );
-  }
-  chat.scrollTop = chat.scrollHeight;
-}
-window.setLLMPreference = setLLMPreference;
-
-function handleGeminiEnter(e) {
-  if (e.key === "Enter") askGemini();
-}
-window.handleGeminiEnter = handleGeminiEnter;
-
-async function askGemini() {
-  const input = document.getElementById("gemini-input");
-  const chat = document.getElementById("gemini-chat");
-  if (!input || !chat) return;
-  const rawQuery = input.value.trim();
-  if (!rawQuery) return;
-
-  chat.insertAdjacentHTML(
-    "beforeend",
-    `<div class="chat-message user-message">${rawQuery}</div>`,
-  );
-  input.value = "";
-  chat.scrollTop = chat.scrollHeight;
-
-  const loadingId = "msg-" + Date.now();
-  chat.insertAdjacentHTML(
-    "beforeend",
-    `
-        <div id="${loadingId}" class="chat-message ai-message">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <div class="google-spinner" style="width:16px; height:16px;">
-                    <svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="4"></circle></svg>
-                </div><span id="ai-status-text">Processing...</span>
-            </div>
-        </div>`,
-  );
-  chat.scrollTop = chat.scrollHeight;
-
-  const query = rawQuery.toLowerCase();
-  let responseMessage = "";
-
-  try {
-    if (useWebLLM) {
-      if (!aiEngine) {
-        const statusLabel = document.getElementById("ai-status-text");
-        if (statusLabel)
-          statusLabel.innerText = "Downloading AI architecture dependencies...";
-        const webllm = await import("https://esm.run/@mlc-ai/web-llm");
-        aiEngine = await webllm.CreateMLCEngine(selectedModel, {
-          initProgressCallback: (report) => {
-            if (statusLabel)
-              statusLabel.innerText = `Caching weights: ${Math.round(report.progress * 100)}%`;
-          },
-        });
-      }
-      let workspaceContext =
-        "You are the Orbit Spatial Assistant. Use this context to answer accurately.\n\n";
-      const messages = [
-        { role: "system", content: workspaceContext },
-        { role: "user", content: rawQuery },
-      ];
-      const reply = await aiEngine.chat.completions.create({ messages });
-      responseMessage = reply.choices[0].message.content;
-    } else {
-      if (
-        query.includes("tutorial") ||
-        query.includes("help") ||
-        query.includes("onboarding")
-      ) {
-        spawnOnboardingCards();
-        responseMessage = `<b>Tutorial Cards Spawned!</b><br>I have placed the 3 onboarding guide cards onto your canvas matrix.`;
-      } else if (
-        query.includes("analyze page") ||
-        query.includes("analyze canvas")
-      ) {
-        const nodes = document.querySelectorAll(".orbit-node");
-        let summaries = [];
-        nodes.forEach((n) => {
-          const title = n.getAttribute("data-title") || "Untitled Card";
-          const type = n.getAttribute("data-type") || "doc";
-          summaries.push(`• [${type.toUpperCase()}] <b>${title}</b>`);
-        });
-
-        responseMessage = `
-          <b>Page & Canvas Analysis Report:</b><br>
-          - Total Active Cards: <b>${nodes.length}</b><br>
-          - Active Threads/Connections: <b>${projectThreads.length}</b><br><br>
-          <b>Canvas Elements:</b><br>${summaries.join("<br>") || "No cards currently on workspace."}
-        `;
-      } else if (
-        query.includes("analyze files") ||
-        query.includes("analyze docs")
-      ) {
-        const nodes = document.querySelectorAll(".orbit-node");
-        let cloudFiles = 0;
-        nodes.forEach((n) => {
-          if (n.getAttribute("data-file-id")) cloudFiles++;
-        });
-
-        responseMessage = `
-          <b>File Schema Inspection:</b><br>
-          - Total Workspace Nodes: ${nodes.length}<br>
-          - Linked Google Drive Cloud Assets: ${cloudFiles}<br>
-          <i>All document schemas are synchronized with local workspace storage.</i>
-        `;
-      } else if (query.includes("add sheet") || query.includes("spawn sheet")) {
-        const titleMatch = rawQuery
-          .replace(/add sheet|spawn sheet/i, "")
-          .trim();
-        const fileName = titleMatch || "New Spreadsheet Matrix";
-        spawnBlankNode("sheet", fileName, "Data grid layout workspace.", 0, 0);
-        responseMessage = `Successfully created and added new <b>Spreadsheet</b> card: <b>"${fileName}"</b>.`;
-      } else if (query.includes("add slide") || query.includes("spawn slide")) {
-        const titleMatch = rawQuery
-          .replace(/add slide|spawn slide/i, "")
-          .trim();
-        const fileName = titleMatch || "New Presentation Deck";
-        spawnBlankNode(
-          "slide",
-          fileName,
-          "Graphics slide frame template matrix.",
-          0,
-          0,
-        );
-        responseMessage = `Successfully created and added new <b>Slide</b> card: <b>"${fileName}"</b>.`;
-      } else if (
-        query.includes("add doc") ||
-        query.includes("add file") ||
-        query.includes("add new file") ||
-        query.includes("spawn file")
-      ) {
-        const titleMatch = rawQuery
-          .replace(/add doc|add file|add new file|spawn file/i, "")
-          .trim();
-        const fileName = titleMatch || "New Document Asset";
-
-        spawnBlankNode(
-          "doc",
-          fileName,
-          "Instantly compiled document workspace.",
-          0,
-          0,
-        );
-        responseMessage = `Successfully created and added new <b>Document</b> card: <b>"${fileName}"</b>.`;
-      } else if (
-        query.includes("remove files") ||
-        query.includes("delete files") ||
-        query.includes("clear canvas")
-      ) {
-        const nodes = document.querySelectorAll(".orbit-node");
-        const count = nodes.length;
-        nodes.forEach((n) => n.remove());
-        projectThreads = [];
-        drawThreads();
-        saveCurrentWorkspace("Cleared Canvas via Command");
-
-        responseMessage = `Successfully scrubbed and removed <b>${count}</b> resource files and layout threads from your canvas matrix.`;
-      } else {
-        responseMessage = `
-          <b>Orbit Command Matrix Active</b><br>
-          Try these commands:<br>
-          • <code>tutorial</code> / <code>help</code><br>
-          • <code>analyze page</code><br>
-          • <code>add doc [Name]</code><br>
-          • <code>add sheet [Name]</code><br>
-          • <code>add slide [Name]</code><br>
-          • <code>remove files</code>
-        `;
-      }
-    }
-  } catch (err) {
-    console.error(err);
-    responseMessage = `Error executing command: ${err.message}`;
-  }
-
-  setTimeout(() => {
-    const loaderMsg = document.getElementById(loadingId);
-    if (loaderMsg) loaderMsg.innerHTML = responseMessage;
-    chat.scrollTop = chat.scrollHeight;
-  }, 300);
-}
-window.askGemini = askGemini;
-
 function signOut() {
-  accessToken = null;
-  document.getElementById("google-signin-btn").style.display = "block";
-  document.getElementById("google-signout-btn").style.display = "none";
-  document.getElementById("profile-avatar").style.display = "none";
-  document.getElementById("calendar-feed").innerHTML =
-    '<div style="padding:20px; text-align:center;">Sign in to view upcoming events...</div>';
-  document.getElementById("drive-feed").innerHTML =
-    '<div style="padding:20px; text-align:center;">Sign in to view recent files...</div>';
-  triggerToast("Signed out safely.");
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken, () => {
+      accessToken = null;
+      document.getElementById("google-signin-btn").style.display = "block";
+      document.getElementById("google-signout-btn").style.display = "none";
+      document.getElementById("profile-avatar").style.display = "none";
+
+      document.getElementById("calendar-feed").innerHTML =
+        '<div style="padding:20px; text-align:center;">🔑 Sign in to view upcoming events...</div>';
+      document.getElementById("drive-feed").innerHTML =
+        '<div style="padding:20px; text-align:center;">🔑 Sign in to view recent files...</div>';
+      triggerToast("👋 Signed out safely.");
+    });
+  }
 }
 window.signOut = signOut;
-
-function handleCredentialResponse(response) {
-  if (response && response.credential) {
-    accessToken = response.credential;
-    resetGuestMode();
-    document.getElementById("google-signin-btn").style.display = "none";
-    document.getElementById("google-signout-btn").style.display = "block";
-    document.getElementById("profile-avatar").style.display = "flex";
-
-    setTimeout(() => {
-      if (activeWorkspaceId) saveCurrentWorkspace("Saved Before New Session");
-      createNewWorkspace();
-    }, 1000);
-
-    triggerToast("Signed in successfully!");
-  }
-}
-window.handleCredentialResponse = handleCredentialResponse;
 
 function initializeGoogleIdentity() {
   if (!DEVELOPER_KEY) return;
@@ -1983,11 +1874,12 @@ function initializeGoogleIdentity() {
         document.getElementById("google-signin-btn").style.display = "none";
         document.getElementById("google-signout-btn").style.display = "block";
         document.getElementById("profile-avatar").style.display = "flex";
+
         fetchCalendarEvents();
         if (document.getElementById("home-screen").style.display === "block") {
           fetchHomeDriveFiles();
         }
-        triggerToast("Signed in successfully.");
+        triggerToast("✅ Signed in successfully!");
         setTimeout(() => {
           if (activeWorkspaceId)
             saveCurrentWorkspace("Saved Before New Session");
@@ -2001,7 +1893,9 @@ function initializeGoogleIdentity() {
     loginTarget.onclick = (e) => {
       e.preventDefault();
       if (!tokenClient) {
-        triggerToast("Google Auth blocked: Check your Client ID and API Keys.");
+        triggerToast(
+          "❌ Google Auth blocked: Check your Client ID and API Keys.",
+        );
         return;
       }
       tokenClient.requestAccessToken();
@@ -2027,36 +1921,32 @@ function selectDeviceMode(mode) {
   const backdrop = document.getElementById("device-mode-backdrop");
   if (backdrop) backdrop.style.display = "none";
 
-  // Reset existing mode classes
   document.body.classList.remove("mode-mobile", "mode-tablet", "mode-desktop");
   document.body.classList.add(`mode-${mode}`);
 
-  // Auto-scale canvas zoom based on device viewport
   if (mode === "mobile") {
-    zoom = 0.48; // Scale down cards so they fit phone screens natively
+    zoom = 0.48;
   } else if (mode === "tablet") {
-    zoom = 0.68; // Medium scale for iPads / Android tablets
+    zoom = 0.68;
   } else {
-    zoom = 0.85; // Standard desktop scale
+    zoom = 0.85;
   }
 
-  // Recenter canvas coordinates cleanly
   pan.x = window.innerWidth / 2 - 5000 * zoom;
   pan.y = window.innerHeight / 2 - 5050 * zoom;
   updateTransform();
 
-  triggerToast(`Optimized for ${mode.toUpperCase()} display.`);
+  triggerToast(`📱 Optimized for ${mode.toUpperCase()} display.`);
 }
 window.selectDeviceMode = selectDeviceMode;
 
-// --- AUTO-DETECT MOBILE / TABLET VIEWPORTS ON BOOTSTRAP ---
 window.addEventListener("DOMContentLoaded", () => {
   const isMobile = window.innerWidth <= 768;
   const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
 
   if (isMobile) {
     document.body.classList.add("mode-mobile");
-    zoom = 0.48; // Compact scale so cards fit iPhone/Android screens
+    zoom = 0.48;
     pan.x = window.innerWidth / 2 - 5000 * zoom;
     pan.y = window.innerHeight / 2 - 5050 * zoom;
     updateTransform();
@@ -2069,7 +1959,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- MOBILE NAVIGATION DROPDOWN TOGGLE ---
 function toggleMobileNavMenu(event) {
   const e = event || window.event;
   if (e && e.stopPropagation) e.stopPropagation();
@@ -2081,15 +1970,68 @@ function toggleMobileNavMenu(event) {
 }
 window.toggleMobileNavMenu = toggleMobileNavMenu;
 
-// Ensure tapping outside closes the mobile nav menu
+let activeMenu = null;
+document.querySelectorAll(".google-menu-bar .menu-item").forEach((item) => {
+  item.addEventListener("click", (e) => {
+    const menuId = item.getAttribute("data-menu");
+    if (!menuId) return;
+    e.stopPropagation();
+    if (activeMenu === menuId) {
+      closeAllMenus();
+    } else {
+      openMenu(menuId, item);
+    }
+  });
+
+  item.addEventListener("mouseenter", (e) => {
+    const menuId = item.getAttribute("data-menu");
+    if (activeMenu && activeMenu !== menuId) {
+      if (menuId) openMenu(menuId, item);
+      else closeAllMenus();
+    }
+  });
+});
+
+function openMenu(menuId, element) {
+  closeAllMenus();
+  if (menuId) {
+    activeMenu = menuId;
+    if (element) element.classList.add("active");
+    const target = document.getElementById(menuId);
+    if (target) target.style.display = "block";
+  }
+}
+window.openMenu = openMenu;
+
+function closeAllMenus() {
+  activeMenu = null;
+  document
+    .querySelectorAll(".dropdown-menu")
+    .forEach((menu) => (menu.style.display = "none"));
+  document
+    .querySelectorAll(".menu-item")
+    .forEach((item) => item.classList.remove("active"));
+}
+window.closeAllMenus = closeAllMenus;
+
 document.addEventListener("click", (e) => {
-  const menu = document.getElementById("top-action-buttons");
-  if (menu && menu.classList.contains("open")) {
+  const topButtons = document.getElementById("top-action-buttons");
+  if (topButtons && topButtons.classList.contains("open")) {
     if (
       !e.target.closest("#top-action-buttons") &&
       !e.target.closest("#mobile-nav-toggle")
     ) {
-      menu.classList.remove("open");
+      topButtons.classList.remove("open");
     }
+  }
+  if (!e.target.closest(".google-menu-bar")) {
+    closeAllMenus();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.altKey && e.shiftKey && e.code === "KeyN") {
+    e.preventDefault();
+    wipeAllWorkspaces();
   }
 });
