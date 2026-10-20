@@ -1,5 +1,6 @@
-const GOOGLE_CLIENT_ID = "303731717202-l9fues9ul9c1t8v0n5r7idtugui7cska.apps.googleusercontent.com";
-let DEVELOPER_KEY = localStorage.getItem("orbit_dev_key") || "";
+const GOOGLE_CLIENT_ID =
+  "303731717202-l9fues9ul9c1t8v0n5r7idtugui7cska.apps.googleusercontent.com";
+const DEVELOPER_KEY = "AIzaSyAbKvRR7LD7ToKy8KZjZYw9_296SEAB-uU";
 
 const viewport = document.getElementById("viewport");
 const container = document.getElementById("canvas-container");
@@ -7,6 +8,7 @@ const svgLayer = document.getElementById("svg-layer");
 const audioTracker = document.getElementById("distance-tracker");
 const historySlider = document.getElementById("history-slider");
 const timeStatus = document.getElementById("time-status");
+
 
 let accessToken = null;
 let pickerApiLoaded = false;
@@ -40,7 +42,9 @@ pan.y -= 5050 * zoom;
 
 // DEVELOPER BULK WIPE
 function wipeAllWorkspaces() {
-  const confirmWipe = confirm("DEV OVERRIDE: Are you sure you want to permanently delete ALL workspaces? This cannot be undone.");
+  const confirmWipe = confirm(
+    "DEV OVERRIDE: Are you sure you want to permanently delete ALL workspaces? This cannot be undone.",
+  );
   if (confirmWipe) {
     localStorage.removeItem("orbit_workspaces");
     activeWorkspaceId = null;
@@ -212,30 +216,8 @@ document.addEventListener("keydown", (e) => {
 
 function checkDeveloperKeyRequirement() {
   const modal = document.getElementById("key-setup-backdrop");
-  if (!DEVELOPER_KEY) {
-    if (modal) modal.style.display = "flex"; // Show modal if no key exists
-  } else {
-    if (modal) modal.style.display = "none";
-  }
+  if (modal) modal.style.display = "none";
 }
-
-function saveDeveloperKeyFromModal() {
-  const input = document.getElementById("modal-key-input");
-  if (input && input.value.trim() !== "") {
-    DEVELOPER_KEY = input.value.trim();
-    localStorage.setItem("orbit_dev_key", DEVELOPER_KEY);
-    document.getElementById("key-setup-backdrop").style.display = "none";
-    triggerToast("🔑 API Key saved securely to browser storage.");
-    
-    // Re-initialize Google APIs now that we have the key
-    if (typeof google !== "undefined" && typeof gapi !== "undefined") {
-      initializeGoogleIdentity();
-    }
-  } else {
-    triggerToast("⚠️ Please enter a valid API Key.");
-  }
-}
-window.saveDeveloperKeyFromModal = saveDeveloperKeyFromModal;
 
 function syncNodeIdCounter() {
   document.querySelectorAll(".orbit-node").forEach((n) => {
@@ -254,7 +236,9 @@ function updateTransform() {
   container.style.transform = `matrix(${zoom}, 0, 0, ${zoom}, ${pan.x}, ${pan.y})`;
   const centerX = (-pan.x + window.innerWidth / 2) / zoom;
   const centerY = (-pan.y + window.innerHeight / 2) / zoom;
-  const dist = Math.round(Math.sqrt(Math.pow(centerX - 5000, 2) + Math.pow(centerY - 5050, 2)));
+  const dist = Math.round(
+    Math.sqrt(Math.pow(centerX - 5000, 2) + Math.pow(centerY - 5050, 2)),
+  );
   if (audioTracker) {
     audioTracker.innerText = `Workspace Dist: ${dist}px | Scale: ${Math.round(zoom * 100)}%`;
   }
@@ -318,10 +302,12 @@ function enableGuestMode() {
     signinBtn.style.border = "1px solid #555";
   }
 
-  document.querySelectorAll(".popover-action[onclick*='openFilePicker']").forEach((btn) => {
-    btn.style.opacity = "0.4";
-    btn.style.cursor = "not-allowed";
-  });
+  document
+    .querySelectorAll(".popover-action[onclick*='openFilePicker']")
+    .forEach((btn) => {
+      btn.style.opacity = "0.4";
+      btn.style.cursor = "not-allowed";
+    });
 
   createNewWorkspace();
   triggerToast("⏳ Guest Demo Mode Active (5 Cards Limit).");
@@ -330,23 +316,37 @@ window.enableGuestMode = enableGuestMode;
 
 function resetGuestMode() {
   isGuestMode = false;
-  document.querySelectorAll(".popover-action[onclick*='openFilePicker']").forEach((btn) => {
-    btn.style.opacity = "1";
-    btn.style.cursor = "pointer";
-  });
+  document
+    .querySelectorAll(".popover-action[onclick*='openFilePicker']")
+    .forEach((btn) => {
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+    });
 }
 
-function spawnBlankNode(type, customTitle = null, customText = null, offsetX = -190, offsetY = -140) {
+function spawnBlankNode(
+  type,
+  customTitle = null,
+  customText = null,
+  offsetX = -190,
+  offsetY = -140,
+) {
   const isTrial = isGuestMode || !accessToken;
   const currentCount = document.querySelectorAll(".orbit-node").length;
   if (isTrial && currentCount >= 5) {
-    triggerToast("⚠️ Trial limit reached (Max 5 cards). Sign in to unlock unlimited creation!");
+    triggerToast(
+      "⚠️ Trial limit reached (Max 5 cards). Sign in to unlock unlimited creation!",
+    );
     return false;
   }
 
   syncNodeIdCounter();
   const titleInput = document.getElementById("blank-asset-title");
-  let title = customTitle || (titleInput && titleInput.value.trim() ? titleInput.value.trim() : `Untitled ${type.toUpperCase()}`);
+  let title =
+    customTitle ||
+    (titleInput && titleInput.value.trim()
+      ? titleInput.value.trim()
+      : `Untitled ${type.toUpperCase()}`);
   nodeIdCounter++;
   const node = document.createElement("div");
   node.className = `orbit-node ${type}-node`;
@@ -439,7 +439,7 @@ function spawnOnboardingCards() {
       • <b>Center:</b> Click 'Recenter Canvas' in the View menu.
     </div>`,
     -420,
-    -150
+    -150,
   );
 
   spawnBlankNode(
@@ -452,7 +452,7 @@ function spawnOnboardingCards() {
       • <b>Focus:</b> Click <b>⛶</b> to full-screen a card.
     </div>`,
     0,
-    -150
+    -150,
   );
 
   spawnBlankNode(
@@ -465,7 +465,7 @@ function spawnOnboardingCards() {
       • <b>AI Matrix:</b> Orbit AI reads connected threads!
     </div>`,
     420,
-    -150
+    -150,
   );
 }
 window.spawnOnboardingCards = spawnOnboardingCards;
@@ -620,8 +620,10 @@ async function spawnBlankNodeDrive(type) {
 
   let mimeType = "";
   if (type === "doc") mimeType = "application/vnd.google-apps.document";
-  else if (type === "sheet") mimeType = "application/vnd.google-apps.spreadsheet";
-  else if (type === "slide") mimeType = "application/vnd.google-apps.presentation";
+  else if (type === "sheet")
+    mimeType = "application/vnd.google-apps.spreadsheet";
+  else if (type === "slide")
+    mimeType = "application/vnd.google-apps.presentation";
 
   try {
     const response = await fetch("https://www.googleapis.com/drive/v3/files", {
