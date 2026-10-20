@@ -60,3 +60,6 @@ Because Orbit operates as a strict client-side application, deployment is straig
 ## Development Credits
 
 This codebase underwent strict optimization, state management refactoring, and logical troubleshooting with the assistance of Gemini . The model served as a core debugging partner, successfully guiding the transition to sandboxed secure UI modal setups, mapping missing event scopes across multi-layered drag physics, and engineering complex logic threads .
+
+## Architectural Diagram 
+[![Architecture diagram of sarveshwaran20/orbit-matrix](https://gitdiagram.com/sarveshwaran20/orbit-matrix/diagram.png)](https://gitdiagram.com/sarveshwaran20/orbit-matrix?utm_source=readme&utm_medium=picture)
